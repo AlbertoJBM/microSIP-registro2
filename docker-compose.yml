@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  central-server:
+    build: ./server
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+    restart: always
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "8080:80"
+    depends_on:
+      - central-server
+    restart: always

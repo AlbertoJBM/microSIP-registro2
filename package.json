@@ -1,0 +1,31 @@
+{
+  "name": "microsip-call-log-sync",
+  "version": "1.0.0",
+  "description": "Sistema de sincronizacion de llamadas MicroSIP",
+  "main": "index.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "install-all": "npm install && cd server && npm install && cd .. && cd agent && npm install && cd .. && cd dashboard && npm install && cd ..",
+    "build-all": "cd server && npm run build && cd .. && cd agent && npm run build && cd .. && cd dashboard && npm run build && cd ..",
+    "build-agent-exe": "cd agent && npm install && npm run build:exe && cd ..",
+    "start": "concurrently -n SERVER,AGENT,DASHBOARD -c blue,green,magenta \"npm run start-server\" \"npm run start-agent\" \"npm run dev-dashboard\"",
+    "start-server": "cd server && npm start",
+    "start-agent": "cd agent && npm start",
+    "dev-server": "cd server && npm run dev",
+    "dev-agent": "cd agent && npm run dev",
+    "dev-dashboard": "cd dashboard && npm run dev",
+    "build-dashboard": "cd dashboard && npm run build",
+    "test": "node test/test-flow.js"
+  },
+  "keywords": [
+    "microsip",
+    "voip",
+    "dashboard"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "dependencies": {
+    "concurrently": "^9.2.1",
+    "sql.js": "^1.10.3"
+  }
+}
