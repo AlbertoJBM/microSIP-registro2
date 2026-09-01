@@ -1,6 +1,6 @@
 // dashboard/src/Dashboard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 import {
   Bar,
   ComposedChart,
@@ -913,7 +913,7 @@ export const Dashboard: React.FC = () => {
       <Sidebar isOpen={isSidebarOpen}>
         <SidebarHeader>
           <SidebarTitle>
-            ◉ <IconeNavegacao src="/img/icone/discurso.png" alt="" /> Central de Chamadas
+            <IconeNavegacao src="/img/icone/discurso.png" alt="" /> Central de Chamadas
           </SidebarTitle>
         </SidebarHeader>
 
@@ -991,10 +991,10 @@ export const Dashboard: React.FC = () => {
         <SidebarSection>
           <SectionTitle>Ações</SectionTitle>
           <PrimaryButton onClick={() => applyFilters()}>
-            ⌕ <IconeNavegacao src="/img/icone/lista.png" alt="" /> Aplicar Filtros
+            <IconeNavegacao src="/img/icone/lista.png" alt="" /> Aplicar Filtros
           </PrimaryButton>
           <SecondaryButton onClick={resetFilters}>
-            × <IconeNavegacao src="/img/icone/corona.png" alt="" /> Limpar Filtros
+            <IconeNavegacao src="/img/icone/libro-abierto.png" alt="" /> Limpar Filtros
           </SecondaryButton>
         </SidebarSection>
 
@@ -1010,7 +1010,7 @@ export const Dashboard: React.FC = () => {
               color: 'white'
             }}
           >
-            ⌂ <IconeNavegacao src="/img/icone/crecimiento.png" alt="" /> Visão Geral
+            <IconeNavegacao src="/img/icone/crecimiento.png" alt="" /> Visão Geral
           </Button>
           <Button 
             onClick={() => {
@@ -1022,7 +1022,7 @@ export const Dashboard: React.FC = () => {
               color: 'white'
             }}
           >
-            ▥ <IconeNavegacao src="/img/icone/trofeo.png" alt="" /> Rankings
+            <IconeNavegacao src="/img/icone/trofeo.png" alt="" /> Rankings
           </Button>
           <Button 
             onClick={() => {
@@ -1034,7 +1034,7 @@ export const Dashboard: React.FC = () => {
               color: 'white'
             }}
           >
-            ▤ <IconeNavegacao src="/img/icone/lista.png" alt="" /> Registros
+            <IconeNavegacao src="/img/icone/lista.png" alt="" /> Registros
           </Button>
         </SidebarSection>
       </Sidebar>
@@ -1239,7 +1239,7 @@ export const Dashboard: React.FC = () => {
 
             <ChartsGrid>
               <TopList>
-                <ChartTitle>Top 5 Agentes mais ativos</ChartTitle>
+                <ChartTitle><IconeTitulo src="/img/icone/medalla.png" alt="" />Top 5 Agentes mais ativos</ChartTitle>
                 {topPerformers.topAgents.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1258,7 +1258,7 @@ export const Dashboard: React.FC = () => {
               </TopList>
 
               <TopList>
-                <ChartTitle><IconeTitulo src="/img/icone/exito.png" alt="" /> Top 5 Agentes com mais entrantes atendidas</ChartTitle>
+                <ChartTitle><IconeTitulo src="/img/icone/corona.png" alt="" /> Top 5 Agentes com mais entrantes atendidas</ChartTitle>
                 {topPerformers.topAtendidas.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1272,7 +1272,7 @@ export const Dashboard: React.FC = () => {
               </TopList>
 
               <TopList>
-                <ChartTitle><IconeTitulo src="/img/icone/corona.png" alt="" /> Top 5 Agentes com mais entrantes não atendidas</ChartTitle>
+                <ChartTitle>Top 5 Agentes com mais entrantes não atendidas</ChartTitle>
                 {topPerformers.topNaoAtendidas.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>

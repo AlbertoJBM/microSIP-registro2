@@ -699,11 +699,159 @@
     "cidade": "Balneário Camboriú",
     "uf": "SC"
   },
+  "88": {
+    "loja": "88",
+    "tipo": "Koch",
+    "bairro": "Universitario",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "89": {
+    "loja": "89",
+    "tipo": "Koch",
+    "bairro": "Do Salto",
+    "cidade": "Blumenau",
+    "uf": "SC"
+  },
   "105": {
     "loja": "105",
     "tipo": "Komprão",
     "bairro": "Campinas",
     "cidade": "São José, Santa Catarina",
     "uf": "SC"
+  },
+  "93": {
+    "loja": "93",
+    "tipo": "Koch",
+    "bairro": "Cedro",
+    "cidade": "Braço do Norte",
+    "uf": "SC"
+  },
+  "94": {
+    "loja": "94",
+    "tipo": "Komprão",
+    "bairro": "Oxford",
+    "cidade": "São Bento do Sul",
+    "uf": "SC"
+  },
+  "91": {
+    "loja": "91",
+    "tipo": "Komprão",
+    "bairro": "Forquilhas",
+    "cidade": "São José, Santa Catarina",
+    "uf": "SC"
+  },
+  "92":{
+    "loja": "92",
+    "tipo": "Komprão",
+    "bairro": "Zona Industrial Norte",
+    "cidade": "Joinville",
+    "uf": "SC"
+  },
+  "90":{
+    "loja": "90",
+    "tipo": "Komprão",
+    "bairro": "Forquilhas",
+    "cidade": "São José, Santa Catarina",
+    "uf": "SC"
+  },
+  "100":{
+    "loja": "100",
+    "tipo": "Komprão",
+    "bairro": "Cordeiros",
+    "cidade": "Itajaí",
+    "uf": "SC"
+  },
+  "101":{
+    "loja": "101",
+    "tipo": "Komprão",
+    "bairro": "Tabuleiro",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "102":{
+    "loja": "102",
+    "tipo": "Koch",
+    "bairro": "Dos Municipios",
+    "cidade": "Balneário Camboriú",
+    "uf": "SC"
+  },
+  "103":{
+    "loja": "103",
+    "tipo": "Komprão",
+    "bairro": "Costeira",
+    "cidade": "Balneário Barra do Sul",
+    "uf": "SC"
+  },
+  "104":{
+    "loja": "104",
+    "tipo": "Komprão",
+    "bairro": "Serra Alta",
+    "cidade": "São Bento do Sul",
+    "uf": "SC"
+  },
+  "106":{
+    "loja": "106",
+    "tipo": "Komprão",
+    "bairro": "Gruta",
+    "cidade": "Ituporanga",
+    "uf": "SC"
+  },
+  "107":{
+    "loja": "107",
+    "tipo": "Koch",
+    "bairro": "Rio Negro",
+    "cidade": "São Bento do Sul",
+    "uf": "SC"
+  },
+  "108":{
+    "loja": "108",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Balneário Piçarras",
+    "uf": "SC"
+  },
+  "109":{
+    "loja": "109",
+    "tipo": "Komprão",
+    "bairro": "null",
+    "cidade": "null",
+    "uf": "SC"
+  },
+  "110":{
+    "loja": "110",
+    "tipo": "Komprão",
+    "bairro": "Badenfurt",
+    "cidade": "Blumenau",
+    "uf": "SC"
+  },
+  "111":{
+    "loja": "111",
+    "tipo": "Koch",
+    "bairro": "Costa e Silva",
+    "cidade": "Joinville",
+    "uf": "SC"
+  },
+  "112":{
+    "loja": "112",
+    "tipo": "Koch",
+    "bairro": "Pinheira",
+    "cidade": "Palhoça",
+    "uf": "SC"
+  },
+  "113":{
+    "loja": "113",
+    "tipo": "Komprão",
+    "bairro": "null",
+    "cidade": "null",
+    "uf": "SC"
+  },
+  "114":{
+    "loja": "114",
+    "tipo": "Komprão",
+    "bairro": "Sào Francisco de Assis",
+    "cidade": "Camboriú",
+    "uf": "SC"
   }
+
 }

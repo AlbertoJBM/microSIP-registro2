@@ -25,7 +25,20 @@
   "author": "Tu Nombre",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.20.0",
+    "chokidar": "^5.0.0",
     "concurrently": "^9.2.1",
-    "sql.js": "^1.10.3"
+    "express": "^5.2.1",
+    "socket.io-client": "^4.8.3",
+    "sql.js": "^1.14.2"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/chokidar": "^1.7.5",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.4.0",
+    "@types/socket.io-client": "^1.4.36",
+    "@types/sql.js": "^1.4.11",
+    "typescript": "^7.0.2"
   }
 }
