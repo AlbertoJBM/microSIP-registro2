@@ -2,7 +2,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import {
-  BarChart,
   Bar,
   ComposedChart,
   Line,
@@ -350,17 +349,35 @@ const AgentSelectionHint = styled.span`
 const IconeNavegacao = styled.img`width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(100,216,255,.45)); flex: 0 0 auto;`;
 const IconeTitulo = styled.img`width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(100,216,255,.5)); flex: 0 0 auto;`;
 const OverviewContent = styled.div`
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 22px;
+
   & > :nth-child(3) { order: 1; }
   & > :nth-child(2) { order: 2; }
+`;
+
+const DashboardSection = styled.section`
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+`;
+
+const SectionHeaderRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 `;
 
 const KPIGrid = styled.div`
   display: grid;
   text-align: center;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 25px;
+  gap: 22px;
+  margin-bottom: 8px;
 `;
 
 const KPICard = styled.div<{ color?: string }>`
@@ -400,10 +417,12 @@ const ChartsGrid = styled.div`
 `;
 
 const ChartCard = styled.div`
-  background: rgba(19,35,58,0.78);
+  background: linear-gradient(180deg, rgba(18,32,52,0.94), rgba(13,24,41,0.88));
   padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-radius: 16px;
+  border: 1px solid rgba(126, 162, 220, 0.18);
+  box-shadow: 0 18px 40px rgba(15,23,42,0.2), inset 0 1px 0 rgba(148,163,184,0.08);
+  backdrop-filter: blur(10px);
 `;
 
 const ChartTitle = styled.h3`
@@ -529,7 +548,7 @@ const TableRow = styled.tr`
 `;
 
 export const Dashboard: React.FC = () => {
-  // Detectar URL del servidor din├ímicamente para soportar acceso desde red
+  // Detectar URL del servidor dinámicamente para soportar acceso desde red
   const SERVER_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
     ? 'http://localhost:3001'
     : window.location.origin;
@@ -849,7 +868,7 @@ export const Dashboard: React.FC = () => {
   };
   const periodLabel = periodDates.length > 0
     ? `Gráfico de ${formatPeriod(periodDates[0])} a ${formatPeriod(periodDates[periodDates.length - 1])}`
-    : 'Gr├ífico sem registros no período selecionado';
+    : 'Gráfico sem registros no período selecionado';
 
   const agentChartData = [...(data.agents || [])].sort((a, b) => agentOrder === 'natural'
     ? 0
@@ -859,13 +878,25 @@ export const Dashboard: React.FC = () => {
 
   const totalCalls = data?.overall?.total_calls || 0;
   const callPercentage = (value: number | undefined) => totalCalls > 0 ? `${Math.round(((value || 0) / totalCalls) * 100)}% do total` : '0% do total';
-  const cityMapData = Object.values(lojaStats.reduce((cities: Record<string, { city: string; stores: string[]; totalCalls: number }>, loja: any) => {
-    const city = loja.location_city || loja.cidade || 'Cidade não identificada';
-    if (!cities[city]) cities[city] = { city, stores: [], totalCalls: 0 };
-    cities[city].stores.push(String(loja.loja));
-    cities[city].totalCalls += Number(loja.total_calls || 0);
+  const cityMapData = Object.values((filteredCalls.length > 0 ? filteredCalls : lojaStats).reduce((cities: Record<string, { city: string; stores: string[]; totalCalls: number; atendidas: number }>, item: any) => {
+    const resolvedCity = item.location_city || item.cidade || item.city || 'Cidade não identificada';
+    const city = String(resolvedCity || 'Cidade não identificada').trim();
+
+    if (!cities[city]) {
+      cities[city] = { city, stores: [], totalCalls: 0, atendidas: 0 };
+    }
+
+    const lojaRef = item.loja ?? item.store ?? item.location_loja;
+    if (lojaRef) cities[city].stores.push(String(lojaRef));
+
+    const totalCallsValue = Number(item.total_calls ?? item.calls ?? 1);
+    const attendedValue = Number(item.entrantes_atendidas ?? (item.duration !== undefined && Number(item.duration) > 0 ? 1 : 0));
+
+    cities[city].totalCalls += Number.isFinite(totalCallsValue) ? totalCallsValue : 1;
+    cities[city].atendidas += Number.isFinite(attendedValue) ? attendedValue : 0;
+
     return cities;
-  }, {})).sort((a, b) => b.totalCalls - a.totalCalls);
+  }, {})).sort((a, b) => b.totalCalls - a.totalCalls || b.atendidas - a.atendidas);
 
   return (
     <DashboardContainer>
@@ -1043,129 +1074,172 @@ export const Dashboard: React.FC = () => {
         {activeTab === 'overview' && (
           <>
             <OverviewContent>
-            <KPIGrid>
-              <KPICard color="#3b82f6">
-                <KPILabel>Total de Chamadas</KPILabel>
-                <KPIValue>{data?.overall?.total_calls || 0}</KPIValue>
-                <KPIChange>{callPercentage(data?.overall?.total_calls)} · Volume total</KPIChange>
-              </KPICard>
-              <KPICard color="#10b981">
-                <KPILabel>Entrantes Atendidas</KPILabel>
-                <KPIValue>{data?.overall?.entrantes_atendidas || 0}</KPIValue>
-                <KPIChange>Atendidas</KPIChange>
-              </KPICard>
-              <KPICard color="#ef4444">
-                <KPILabel>Entrantes Não Atendidas</KPILabel>
-                <KPIValue>{data?.overall?.entrantes_nao_atendidas || 0}</KPIValue>
-                <KPIChange>Não atendidas</KPIChange>
-              </KPICard>
-              <KPICard color="#f59e0b">
-                <KPILabel>Salientes Atendidas</KPILabel>
-                <KPIValue>{data?.overall?.salientes_atendidas || 0}</KPIValue>
-                <KPIChange>Realizadas</KPIChange>
-              </KPICard>
-              <KPICard color="#8b5cf6">
-                <KPILabel>Duração Média</KPILabel>
-                <KPIValue>{Math.round(data?.overall?.avg_duration || 0)}s</KPIValue>
-                <KPIChange>Média de atendimento</KPIChange>
-              </KPICard>
-            </KPIGrid>
+              <DashboardSection>
+                <KPIGrid>
+                  <KPICard color="#3b82f6">
+                    <KPILabel>Total de Chamadas</KPILabel>
+                    <KPIValue>{data?.overall?.total_calls || 0}</KPIValue>
+                    <KPIChange>{callPercentage(data?.overall?.total_calls)} · Volume total</KPIChange>
+                  </KPICard>
+                  <KPICard color="#10b981">
+                    <KPILabel>Entrantes Atendidas</KPILabel>
+                    <KPIValue>{data?.overall?.entrantes_atendidas || 0}</KPIValue>
+                    <KPIChange>Atendidas</KPIChange>
+                  </KPICard>
+                  <KPICard color="#ef4444">
+                    <KPILabel>Entrantes Não Atendidas</KPILabel>
+                    <KPIValue>{data?.overall?.entrantes_nao_atendidas || 0}</KPIValue>
+                    <KPIChange>Não atendidas</KPIChange>
+                  </KPICard>
+                  <KPICard color="#f59e0b">
+                    <KPILabel>Salientes Atendidas</KPILabel>
+                    <KPIValue>{data?.overall?.salientes_atendidas || 0}</KPIValue>
+                    <KPIChange>Realizadas</KPIChange>
+                  </KPICard>
+                  <KPICard color="#8b5cf6">
+                    <KPILabel>Duração Média</KPILabel>
+                    <KPIValue>{Math.round(data?.overall?.avg_duration || 0)}s</KPIValue>
+                    <KPIChange>Média de atendimento</KPIChange>
+                  </KPICard>
+                </KPIGrid>
+              </DashboardSection>
 
-            <ChartsGrid>
-              <ChartCard>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                  <ChartTitle><span style={{ color: '#64d8ff', fontSize: '28px', textShadow: '0 0 14px #64d8ff' }}>▥</span> Chamadas por Agente</ChartTitle>
-                  <ChartOrderSelect value={agentOrder} onChange={(event) => setAgentOrder(event.target.value as 'natural' | 'desc' | 'asc')}>
-                    <option value="natural">Ordem original</option>
-                    <option value="desc">Maior para menor</option>
-                    <option value="asc">Menor para maior</option>
-                  </ChartOrderSelect>
-                </div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={agentChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />top
-                    <XAxis dataKey="agent_full_name" stroke="#64748b" fontSize={12} />
-                    <YAxis stroke="#64748b" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1e293b', 
-                        border: 'none', 
-                        borderRadius: '8px',
-                        color: 'white'
-                      }} 
-                    />
-                    <Legend />
-                    <Bar dataKey="entrantes_atendidas" fill="#10b981" name="Entrantes Atendidas" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="entrantes_nao_atendidas" fill="#ef4444" name="Entrantes Não Atendidas" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="salientes_atendidas" fill="#f59e0b" name="Salientes Atendidas" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="salientes_nao_atendidas" fill="#8b5cf6" name="Salientes Não Atendidas" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
+              <DashboardSection>
+                <ChartsGrid>
+                  <ChartCard>
+                    <SectionHeaderRow>
+                      <ChartTitle><span style={{ color: '#64d8ff', fontSize: '28px', textShadow: '0 0 14px #64d8ff' }}>▥</span> Chamadas por Agente</ChartTitle>
+                      <ChartOrderSelect value={agentOrder} onChange={(event) => setAgentOrder(event.target.value as 'natural' | 'desc' | 'asc')}>
+                        <option value="natural">Ordem original</option>
+                        <option value="desc">Maior para menor</option>
+                        <option value="asc">Menor para maior</option>
+                      </ChartOrderSelect>
+                    </SectionHeaderRow>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <ComposedChart data={agentChartData} barGap={6}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.35)" />
+                        <XAxis dataKey="agent_full_name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip
+                          cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+                          contentStyle={{
+                            backgroundColor: '#0f172a',
+                            border: '1px solid rgba(96,165,250,0.25)',
+                            borderRadius: '10px',
+                            color: '#e2e8f0',
+                            boxShadow: '0 14px 30px rgba(15,23,42,0.35)'
+                          }}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: 16, fontSize: '12px' }} />
+                        <Bar dataKey="entrantes_atendidas" fill="#10b981" name="Entrantes Atendidas" radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="salientes_atendidas" fill="#f59e0b" name="Salientes Atendidas" radius={[6, 6, 0, 0]} />
+                        <Line type="monotone" dataKey="entrantes_nao_atendidas" stroke="#ef4444" strokeWidth={2.6} strokeDasharray="4 5" dot={{ r: 4, strokeWidth: 2 }} name="Entrantes Não Atendidas" />
+                        <Line type="monotone" dataKey="salientes_nao_atendidas" stroke="#8b5cf6" strokeWidth={2.6} strokeDasharray="4 5" dot={{ r: 4, strokeWidth: 2 }} name="Salientes Não Atendidas" />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </ChartCard>
 
-              <ChartCard>
-                <ChartTitle><span style={{ color: '#ff6b9d', fontSize: '28px', textShadow: '0 0 14px #ff6b9d' }}>⌖</span> Mapa referencial das lojas</ChartTitle>
-                <div style={{ textAlign: 'center', color: '#64748b', marginBottom: '12px' }}>Distribuição aproximada por cidade.</div>
-                <div style={{ minHeight: '300px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '12px', alignContent: 'center', padding: '24px', borderRadius: '20px', background: '#eaf3ff' }}>
-                  {cityMapData.map((city) => <div key={city.city} style={{ textAlign: 'center', padding: '14px', borderRadius: '16px', background: 'white', boxShadow: '0 10px 24px rgba(30,64,175,0.12)' }}><div style={{ fontSize: '24px' }}>●</div><strong>{city.city}</strong><div style={{ fontSize: '11px', color: '#64748b' }}>{city.stores.length} lojas · {city.totalCalls} chamadas</div></div>)}
-                </div>
-              </ChartCard>
-            </ChartsGrid>
+                  <ChartCard>
+                    <ChartTitle><span style={{ color: '#ff6b9d', fontSize: '28px', textShadow: '0 0 14px #ff6b9d' }}>⌖</span> Ranking por cidade</ChartTitle>
+                    <div style={{ color: '#64748b', marginBottom: '18px', fontSize: '13px' }}>
+                      Top cidades por volume e taxa de atendimentos.
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '300px' }}>
+                      {cityMapData.length > 0 ? cityMapData.slice(0, 6).map((city, index) => {
+                        const maxCalls = cityMapData[0]?.totalCalls || 1;
+                        const barWidth = Math.max((city.totalCalls / maxCalls) * 100, 10);
 
-            <ChartCard>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                <ChartTitle><span style={{ color: '#ffd166', fontSize: '28px', textShadow: '0 0 14px #ffd166' }}>◷</span> Horários com mais chamadas</ChartTitle>
-                <ChartActions>
-                  <ChartActionButton active={hourlyView === 'general'} onClick={() => setHourlyView('general')}>Geral</ChartActionButton>
-                  <ChartActionButton active={hourlyView === 'incoming'} onClick={() => setHourlyView('incoming')}>Recebidas</ChartActionButton>
-                  <ChartActionButton active={hourlyView === 'outgoing'} onClick={() => setHourlyView('outgoing')}>Realizadas</ChartActionButton>
-                  <ChartActionButton active={hourlyOrder === 'natural'} onClick={() => setHourlyOrder('natural')}>Horário natural</ChartActionButton>
-                  <ChartActionButton active={hourlyOrder === 'desc'} onClick={() => setHourlyOrder('desc')}>Maior para menor</ChartActionButton>
-                  <ChartActionButton active={hourlyOrder === 'asc'} onClick={() => setHourlyOrder('asc')}>Menor para maior</ChartActionButton>
-                </ChartActions>
-              </div>
-              <ResponsiveContainer width="100%" height={360}>
-                <ComposedChart data={hourlyChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="hour" stroke="#64748b" fontSize={11} interval={0} angle={-45} textAnchor="end" height={70} />
-                  <YAxis allowDecimals={false} stroke="#64748b" fontSize={12} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="atendidas" stackId="a" fill="#10b981" name="Atendidas" radius={[4, 4, 0, 0]} />
-                  
-                <Line type="monotone" dataKey="nao_atendidas" stroke="#ef4444" strokeWidth={2.5} strokeDasharray="2 7" dot={{ r: 4 }} name="Não Atendidas" />
-                </ComposedChart>
-              </ResponsiveContainer>
-              <ChartPeriod>{periodLabel}</ChartPeriod>
-            </ChartCard>
+                        return (
+                          <div key={city.city} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fbff', border: '1px solid rgba(59,130,246,0.12)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#2563eb', color: 'white', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '12px' }}>
+                                  {index + 1}
+                                </div>
+                                <div style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {city.city}
+                                </div>
+                              </div>
+                              <div style={{ fontWeight: 700, color: '#10b981', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                                {city.atendidas} atendidas
+                              </div>
+                            </div>
+                            <div style={{ height: '10px', background: '#dfeafc', borderRadius: '999px', overflow: 'hidden' }}>
+                              <div style={{ width: `${barWidth}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)', borderRadius: '999px' }} />
+                            </div>
+                            <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
+                              <span>{city.totalCalls} chamadas</span>
+                              <span>{city.stores.length} lojas</span>
+                            </div>
+                          </div>
+                        );
+                      }) : (
+                        <div style={{ display: 'grid', placeItems: 'center', minHeight: '220px', color: '#64748b', textAlign: 'center' }}>
+                          Sem dados de cidade para exibir.
+                        </div>
+                      )}
+                    </div>
+                  </ChartCard>
+                </ChartsGrid>
+              </DashboardSection>
+
+              <DashboardSection>
+                <ChartCard>
+                  <SectionHeaderRow>
+                    <ChartTitle><span style={{ color: '#ffd166', fontSize: '28px', textShadow: '0 0 14px #ffd166' }}>◷</span> Horários com mais chamadas</ChartTitle>
+                    <ChartActions>
+                      <ChartActionButton active={hourlyView === 'general'} onClick={() => setHourlyView('general')}>Geral</ChartActionButton>
+                      <ChartActionButton active={hourlyView === 'incoming'} onClick={() => setHourlyView('incoming')}>Recebidas</ChartActionButton>
+                      <ChartActionButton active={hourlyView === 'outgoing'} onClick={() => setHourlyView('outgoing')}>Realizadas</ChartActionButton>
+                      <ChartActionButton active={hourlyOrder === 'natural'} onClick={() => setHourlyOrder('natural')}>Horário natural</ChartActionButton>
+                      <ChartActionButton active={hourlyOrder === 'desc'} onClick={() => setHourlyOrder('desc')}>Maior para menor</ChartActionButton>
+                      <ChartActionButton active={hourlyOrder === 'asc'} onClick={() => setHourlyOrder('asc')}>Menor para maior</ChartActionButton>
+                    </ChartActions>
+                  </SectionHeaderRow>
+                  <ResponsiveContainer width="100%" height={360}>
+                    <ComposedChart data={hourlyChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="hour" stroke="#64748b" fontSize={11} interval={0} angle={-45} textAnchor="end" height={70} />
+                      <YAxis allowDecimals={false} stroke="#64748b" fontSize={12} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="atendidas" stackId="a" fill="#10b981" name="Atendidas" radius={[4, 4, 0, 0]} />
+                      <Line type="monotone" dataKey="nao_atendidas" stroke="#ef4444" strokeWidth={2.5} strokeDasharray="2 7" dot={{ r: 4 }} name="Não Atendidas" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                  <ChartPeriod>{periodLabel}</ChartPeriod>
+                </ChartCard>
+              </DashboardSection>
             </OverviewContent>
           </>
         )}
 
         {activeTab === 'tops' && (
           <>
-            <TopList>
-              <ChartTitle>­ƒÅ¬ Top Lojas com mais atendimentos</ChartTitle>
-              {[...lojaStats].sort((a, b) => (b.entrantes_atendidas || 0) - (a.entrantes_atendidas || 0)).slice(0, 5).map((loja, index) => (
-                <TopItem key={loja.loja}>
-                  <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
-                  <TopInfo>
-                    <TopName>Loja {loja.loja}{(loja.location_city || loja.cidade) ? `, ${loja.location_city || loja.cidade}` : ""}</TopName>
-                    <TopMetric>Entrantes atendidas</TopMetric>
-                  </TopInfo>
-                  <TopValue>{loja.entrantes_atendidas || 0}</TopValue>
-                </TopItem>
-              ))}
-              {lojaStats.length === 0 && (
-                <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
-                  Não h├í dados de lojas dispon├¡veis
-                </div>
-              )}
-            </TopList>
+            <DashboardSection>
+              <TopList>
+                <ChartTitle>Top Lojas com mais atendimentos</ChartTitle>
+                {[...lojaStats].sort((a, b) => (b.entrantes_atendidas || 0) - (a.entrantes_atendidas || 0)).slice(0, 5).map((loja, index) => (
+                  <TopItem key={loja.loja}>
+                    <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
+                    <TopInfo>
+                      <TopName>Loja {loja.loja}{(loja.location_city || loja.cidade) ? `, ${loja.location_city || loja.cidade}` : ""}</TopName>
+                      <TopMetric>Entrantes atendidas</TopMetric>
+                    </TopInfo>
+                    <TopValue>{loja.entrantes_atendidas || 0}</TopValue>
+                  </TopItem>
+                ))}
+                {lojaStats.length === 0 && (
+                  <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
+                    Não há dados de lojas disponíveis
+                  </div>
+                )}
+              </TopList>
+            </DashboardSection>
 
             <ChartsGrid>
               <TopList>
-                <ChartTitle>Ô¡É Top 5 Agentes mais ativos</ChartTitle>
+                <ChartTitle>Top 5 Agentes mais ativos</ChartTitle>
                 {topPerformers.topAgents.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1178,7 +1252,7 @@ export const Dashboard: React.FC = () => {
                 ))}
                 {topPerformers.topAgents.length === 0 && (
                   <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
-                    Não h├í dados dispon├¡veis
+                    Não há dados disponíveis
                   </div>
                 )}
               </TopList>
@@ -1212,7 +1286,7 @@ export const Dashboard: React.FC = () => {
               </TopList>
 
               <TopList>
-                <ChartTitle>­ƒôñ Top 5 Agentes com mais salientes atendidas</ChartTitle>
+                <ChartTitle>Top 5 Agentes com mais salientes atendidas</ChartTitle>
                 {topPerformers.topSalientes.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1232,7 +1306,7 @@ export const Dashboard: React.FC = () => {
           <>
             {filteredCalls.length > 0 ? (
               <ChartCard>
-                <ChartTitle>­ƒôï ▤ <IconeNavegacao src="/img/icone/lista.png" alt="" /> Registros filtrados ({filteredCalls.length})</ChartTitle>
+                <ChartTitle>Registros filtrados ({filteredCalls.length})</ChartTitle>
                 <div style={{ overflowX: 'auto' }}>
                   <CallsTable>
                     <thead>

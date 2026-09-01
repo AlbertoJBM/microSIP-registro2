@@ -274,7 +274,11 @@ function buildCallsFilter(queryParams) {
 }
 app.use((0, cors_1.default)());
 app.use(express_1.default.json({ limit: '50mb' }));
-app.use(express_1.default.static(path.join(__dirname, '../public')));
+const dashboardBuildPath = path.join(__dirname, '../../dashboard/dist');
+const publicStaticPath = fs.existsSync(dashboardBuildPath)
+    ? dashboardBuildPath
+    : path.join(__dirname, '../public');
+app.use(express_1.default.static(publicStaticPath));
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

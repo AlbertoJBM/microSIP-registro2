@@ -15,7 +15,7 @@
     "dev-agent": "cd agent && npm run dev",
     "dev-dashboard": "cd dashboard && npm run dev",
     "build-dashboard": "cd dashboard && npm run build",
-    "test": "node test/test-flow.js"
+    "test": "npm run build-all"
   },
   "keywords": [
     "microsip",
