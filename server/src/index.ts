@@ -17,6 +17,24 @@ const io = new Server(server, {
 
 let db: any = null;
 const dbPath = path.join(__dirname, '../data', 'central_logs.db');
+const storeLocationsPath = path.join(__dirname, '../data', 'store-locations.json');
+let storeLocations: Record<string, { loja: string; tipo: string; bairro: string; cidade: string; uf: string }> = {};
+
+try {
+  if (fs.existsSync(storeLocationsPath)) {
+    storeLocations = JSON.parse(fs.readFileSync(storeLocationsPath, 'utf8'));
+  }
+} catch (error) {
+  console.warn('Não foi possível carregar o catálogo de localidades:', error);
+}
+
+function getStoreLocation(loja: unknown, phoneNumber: unknown) {
+  const normalizedNumber = String(phoneNumber || '').replace(/\D/g, '');
+  const numberPrefix = normalizedNumber.length > 2
+    ? normalizedNumber.slice(0, -2)
+    : '';
+  return storeLocations[String(loja || '')] || storeLocations[numberPrefix] || null;
+}
 
 // Mapeo de sectores
 const SECTOR_MAP: { [key: string]: string } = {
@@ -182,7 +200,11 @@ function sqlValue(value: unknown): string {
 }
 
 function buildCallsFilter(queryParams: any): string {
-  const { startDate, endDate, user, loja, sector } = queryParams;
+  const { startDate, endDate, loja, sector } = queryParams;
+  const rawUsers = queryParams.user ?? queryParams.users;
+  const users = (Array.isArray(rawUsers) ? rawUsers : rawUsers ? [rawUsers] : [])
+    .map(String)
+    .filter(Boolean);
   const conditions = ["number NOT LIKE '*%'", "number != '*'", 'number IS NOT NULL'];
   const lojaPrefixes: { [key: string]: string } = {
     'CD & CD2': '984',
@@ -193,7 +215,11 @@ function buildCallsFilter(queryParams: any): string {
 
   if (startDate) conditions.push(`formatted_time >= ${sqlValue(`${startDate} 00:00:00`)}`);
   if (endDate) conditions.push(`formatted_time < date(${sqlValue(endDate)}, '+1 day')`);
-  if (user) conditions.push(`agent_username = ${sqlValue(user)}`);
+  if (users.length === 1) {
+    conditions.push(`agent_username = ${sqlValue(users[0])}`);
+  } else if (users.length > 1) {
+    conditions.push(`agent_username IN (${users.map(sqlValue).join(', ')})`);
+  }
   if (loja) {
     const lojaPrefix = lojaPrefixes[String(loja)] || String(loja);
     conditions.push(`number LIKE ${sqlValue(`${lojaPrefix}%`)}`);
@@ -403,14 +429,19 @@ app.get('/api/stats/by-loja', (req, res) => {
     `);
     
     const lojas = result.length > 0 ?
-      result[0].values.map((row: any) => ({
+      result[0].values.map((row: any) => {
+        const location = getStoreLocation(row[0], '');
+        return {
         loja: row[0],
+        cidade: location?.cidade || '',
+        bairro: location?.bairro || '',
         total_calls: row[1] || 0,
         entrantes_atendidas: row[2] || 0,
         entrantes_nao_atendidas: row[3] || 0,
         salientes_atendidas: row[4] || 0,
         salientes_nao_atendidas: row[5] || 0
-      })) : [];
+        };
+      }) : [];
     
     res.json(lojas);
   } catch (error) {
@@ -433,7 +464,11 @@ app.get('/api/filters', (req, res) => {
     const lojasResult = db.exec(`SELECT DISTINCT loja FROM call_logs WHERE loja IS NOT NULL AND loja != '' AND loja != 'Desconhecida' ORDER BY loja`);
     const lojas = lojasResult.length > 0 ? lojasResult[0].values.map((row: any) => row[0]) : [];
     
-    res.json({ users, lojas, sectors: [] });
+    res.json({
+      users,
+      lojas,
+      sectors: Object.entries(SECTOR_MAP).map(([code, name]) => ({ code, name }))
+    });
   } catch (error) {
     res.json({ users: [], lojas: [], sectors: [] });
   }
@@ -444,19 +479,15 @@ app.get('/api/calls', (req, res) => {
   try {
     if (!db) return res.json([]);
     
-    const { startDate, endDate, user, loja } = req.query;
-    let where = [];
+    // Reutiliza exatamente os mesmos filtros das estatísticas, inclusive
+    // data, múltiplos agentes, loja e setor.
+    const filter = buildCallsFilter(req.query);
+    const result = db.exec(`SELECT * FROM call_logs WHERE ${filter} ORDER BY formatted_time DESC`);
     
-    if (startDate) where.push(`formatted_time >= '${startDate} 00:00:00'`);
-    if (endDate) where.push(`formatted_time < date('${endDate}', '+1 day')`);
-    if (user) where.push(`agent_username = '${user}'`);
-    if (loja) where.push(`loja = '${loja}'`);
-    
-    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
-    
-    const result = db.exec(`SELECT * FROM call_logs ${whereClause} ORDER BY formatted_time DESC LIMIT 2000`);
-    
-    const calls = result.length > 0 ? result[0].values.map((row: any) => ({
+    const calls = result.length > 0 ? result[0].values.map((row: any) => {
+      const parsedNumber = parseNumber(row[5]);
+      const location = getStoreLocation(row[15] || parsedNumber.loja, row[5]);
+      return {
       id: row[0],
       original_id: row[1],
       callId: row[2],
@@ -472,10 +503,13 @@ app.get('/api/calls', (req, res) => {
       info: row[12],
       synced_at: row[13],
       category: row[14] || '',
-      loja: row[15] || 'Desconhecida',
-      sector: '',
-      sector_name: ''
-    })) : [];
+      loja: row[15] || parsedNumber.loja || 'Desconhecida',
+      sector: parsedNumber.sector || '',
+      sector_name: parsedNumber.sectorName || '',
+      location_city: location?.cidade || '',
+      location_neighborhood: location?.bairro || ''
+      };
+    }) : [];
     
     res.json(calls);
   } catch (error) {

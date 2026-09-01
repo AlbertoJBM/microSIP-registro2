@@ -4,14 +4,13 @@ import { io } from 'socket.io-client';
 import {
   BarChart,
   Bar,
+  ComposedChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  PieChart,
-  Pie,
-  Cell,
   ResponsiveContainer
 } from 'recharts';
 import styled from 'styled-components';
@@ -64,6 +63,8 @@ interface CallRecord {
   loja: string;
   sector: string;
   sector_name: string;
+  location_city?: string;
+  location_neighborhood?: string;
 }
 
 interface FilterOptions {
@@ -84,7 +85,7 @@ const DashboardContainer = styled.div`
   display: flex;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f5f5f5;
+  background: radial-gradient(circle at 88% 8%, rgba(42,141,255,0.22), transparent 28%), radial-gradient(circle at 12% 92%, rgba(119,79,255,0.16), transparent 32%), #07111f;
 `;
 
 const Sidebar = styled.div<{ isOpen: boolean }>`
@@ -100,9 +101,6 @@ const Sidebar = styled.div<{ isOpen: boolean }>`
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
 
-  @media (min-width: 1024px) {
-    transform: translateX(0);
-  }
 `;
 
 const Overlay = styled.div<{ isOpen: boolean }>`
@@ -120,26 +118,27 @@ const Overlay = styled.div<{ isOpen: boolean }>`
   }
 `;
 
-const MenuButton = styled.button`
-  display: none;
+const MenuButton = styled.button<{ sidebarOpen: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1001;
-  background: #1e3a8a;
+  top: 50%;
+  left: ${props => props.sidebarOpen ? '264px' : '0'};
+  transform: translateY(-50%);
+  z-index: 1100;
+  width: 28px;
+  height: 76px;
+  background: rgba(25,57,96,0.94);
   color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+  padding: 0;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  font-size: 20px;
-
-  @media (max-width: 1023px) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  box-shadow: 8px 0 24px rgba(0,0,0,0.22);
+  font-size: 16px;
+  transition: left 260ms ease-out;
 `;
 
 const SidebarHeader = styled.div`
@@ -172,7 +171,7 @@ const SectionTitle = styled.h3`
 `;
 
 const FilterGroup = styled.div`
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 `;
 
 const FilterLabel = styled.label`
@@ -221,8 +220,8 @@ const ChartOrderSelect = styled.select`
   padding: 7px 10px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  background: white;
-  color: #334155;
+  background: rgba(19,35,58,0.78);
+  color: #dbeafe;
   font-size: 13px;
 `;
 
@@ -256,51 +255,116 @@ const SecondaryButton = styled(Button)`
   }
 `;
 
-const MainContent = styled.div`
+const MainContent = styled.div<{ sidebarOpen: boolean }>`
   flex: 1;
   margin-left: 0;
   padding: 30px;
   padding-top: 80px;
+  transition: margin-left 260ms ease-out;
 
   @media (min-width: 1024px) {
-    margin-left: 280px;
+    margin-left: ${props => props.sidebarOpen ? '280px' : '0'};
     padding-top: 30px;
   }
 `;
 
 const Header = styled.div`
-  background: white;
+  background: linear-gradient(135deg, rgba(15,35,62,0.98), rgba(9,22,40,0.96));
   padding: 25px 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  margin-bottom: 25px;
+  border-radius: 22px;
+  border: 1px solid rgba(100,216,255,0.24);
+  box-shadow: 0 18px 50px rgba(30,64,175,0.12);
+  backdrop-filter: blur(22px);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  text-align: center;
 `;
 
 const HeaderTitle = styled.h1`
   font-size: 24px;
   font-weight: 700;
-  color: #1e293b;
+  color: #f7fbff;
   margin: 0;
 `;
 
 const HeaderSubtitle = styled.p`
-  color: #64748b;
+  color: #9fb3ca;
   margin: 5px 0 0 0;
   font-size: 14px;
 `;
 
+const AgentStrip = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(30,64,175,0.12);
+  @media (max-width: 640px) {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px 10px;
+  }
+`;
+
+const AgentButton = styled.button<{ selected: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 124px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 180ms ease-out;
+  &:hover { transform: translateY(-2px); }
+  & > span { max-width: 124px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; color: ${props => props.selected ? '#1e3a8a' : '#64748b'}; }
+`;
+
+const AgentAvatar = styled.span<{ selected: boolean }>`
+  display: grid;
+  place-items: center;
+  width: clamp(76px, 10vw, 116px);
+  height: clamp(76px, 10vw, 116px);
+  overflow: hidden;
+  border-radius: 50%;
+  border: 3px solid ${props => props.selected ? '#3b82f6' : 'rgba(30,64,175,0.18)'};
+  background: #eaf3ff;
+  box-shadow: ${props => props.selected ? '0 0 0 6px rgba(59,130,246,0.16), 0 16px 30px rgba(30,64,175,0.30)' : '0 8px 20px rgba(30,64,175,0.16)'};
+  transform: ${props => props.selected ? 'translateY(-4px) scale(1.04)' : 'none'};
+  transition: all 180ms ease-out;
+`;
+
+const AgentAvatarImage = styled.img`
+  width: 100%; height: 100%; object-fit: cover;
+`;
+
+const AgentSelectionHint = styled.span`
+  margin-left: auto; align-self: center; color: #9fb3ca; font-size: 12px;
+`;
+
+const IconeNavegacao = styled.img`width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(100,216,255,.45)); flex: 0 0 auto;`;
+const IconeTitulo = styled.img`width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(100,216,255,.5)); flex: 0 0 auto;`;
+const OverviewContent = styled.div`
+  display: flex; flex-direction: column;
+  & > :nth-child(3) { order: 1; }
+  & > :nth-child(2) { order: 2; }
+`;
+
 const KPIGrid = styled.div`
   display: grid;
+  text-align: center;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   margin-bottom: 25px;
 `;
 
 const KPICard = styled.div<{ color?: string }>`
-  background: white;
+  background: rgba(19,35,58,0.78);
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -310,13 +374,13 @@ const KPICard = styled.div<{ color?: string }>`
 const KPIValue = styled.div`
   font-size: 28px;
   font-weight: 700;
-  color: #1e293b;
+  color: #f7fbff;
   margin: 8px 0;
 `;
 
 const KPILabel = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: #9fb3ca;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
@@ -336,7 +400,7 @@ const ChartsGrid = styled.div`
 `;
 
 const ChartCard = styled.div`
-  background: white;
+  background: rgba(19,35,58,0.78);
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -345,7 +409,7 @@ const ChartCard = styled.div`
 const ChartTitle = styled.h3`
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: #f7fbff;
   margin: 0 0 20px;
   display: flex;
   align-items: center;
@@ -369,14 +433,14 @@ const ChartActionButton = styled.button<{ active?: boolean }>`
 `;
 
 const ChartPeriod = styled.div`
-  color: #64748b;
+  color: #9fb3ca;
   font-size: 12px;
   margin-top: 12px;
   text-align: left;
 `;
 
 const TopList = styled.div`
-  background: white;
+  background: rgba(19,35,58,0.78);
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -414,7 +478,7 @@ const TopInfo = styled.div`
 
 const TopName = styled.div`
   font-weight: 600;
-  color: #1e293b;
+  color: #f7fbff;
   font-size: 14px;
 `;
 
@@ -426,7 +490,7 @@ const TopValue = styled.div`
 
 const TopMetric = styled.div`
   font-size: 12px;
-  color: #64748b;
+  color: #9fb3ca;
 `;
 //----------------------------------------------------------------variable de colores-----------------------------------//
 //const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -434,7 +498,7 @@ const TopMetric = styled.div`
 const CallsTable = styled.table`
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: rgba(19,35,58,0.78);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -455,7 +519,7 @@ const TableCell = styled.td`
   padding: 15px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 14px;
-  color: #334155;
+  color: #dbeafe;
 `;
 
 const TableRow = styled.tr`
@@ -465,7 +529,7 @@ const TableRow = styled.tr`
 `;
 
 export const Dashboard: React.FC = () => {
-  // Detectar URL del servidor dinámicamente para soportar acceso desde red
+  // Detectar URL del servidor din├ímicamente para soportar acceso desde red
   const SERVER_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
     ? 'http://localhost:3001'
     : window.location.origin;
@@ -501,21 +565,21 @@ export const Dashboard: React.FC = () => {
   // Filter states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectedLoja, setSelectedLoja] = useState('');
   const [selectedSector, setSelectedSector] = useState('');
   const [hourlyView, setHourlyView] = useState<HourlyView>('general');
   const [hourlyOrder, setHourlyOrder] = useState<'natural' | 'desc' | 'asc'>('natural');
   const [agentOrder, setAgentOrder] = useState<'natural' | 'desc' | 'asc'>('natural');
   const [activeTab, setActiveTab] = useState<'overview' | 'calls' | 'tops'>('overview');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const filterParamsRef = useRef(new URLSearchParams());
 
-  const getFilterParams = () => {
+  const getFilterParams = (users = selectedUsers) => {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    if (selectedUser) params.append('user', selectedUser);
+    users.forEach((user) => params.append('user', user));
     if (selectedLoja) params.append('loja', selectedLoja);
     if (selectedSector) params.append('sector', selectedSector);
     return params;
@@ -523,7 +587,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     filterParamsRef.current = getFilterParams();
-  }, [startDate, endDate, selectedUser, selectedLoja, selectedSector]);
+  }, [startDate, endDate, selectedUsers, selectedLoja, selectedSector]);
 
   const fetchDashboardData = async (params = new URLSearchParams()) => {
     try {
@@ -595,9 +659,9 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const applyFilters = async () => {
+  const applyFilters = async (users = selectedUsers) => {
     try {
-      const params = getFilterParams();
+      const params = getFilterParams(users);
 
       const [callsResponse, statsResponse] = await Promise.all([
         fetch(`${SERVER_URL}/api/calls?${params.toString()}`),
@@ -613,10 +677,18 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const toggleAgent = async (username: string) => {
+    const nextUsers = selectedUsers.includes(username)
+      ? selectedUsers.filter((user) => user !== username)
+      : [...selectedUsers, username];
+    setSelectedUsers(nextUsers);
+    await applyFilters(nextUsers);
+  };
+
   const resetFilters = () => {
     setStartDate('');
     setEndDate('');
-    setSelectedUser('');
+    setSelectedUsers([]);
     setSelectedLoja('');
     setSelectedSector('');
     fetchAllCalls();
@@ -740,7 +812,7 @@ export const Dashboard: React.FC = () => {
         flexDirection: 'column',
         gap: '20px'
       }}>
-        <div style={{ fontSize: '48px' }}>⏳</div>
+        <div style={{ fontSize: '48px' }}>Carregando...</div>
         <div style={{ fontSize: '18px', color: '#64748b' }}>Carregando dashboard...</div>
         <div style={{ fontSize: '14px', color: '#94a3b8' }}>
           Conectando ao servidor...
@@ -777,7 +849,7 @@ export const Dashboard: React.FC = () => {
   };
   const periodLabel = periodDates.length > 0
     ? `Gráfico de ${formatPeriod(periodDates[0])} a ${formatPeriod(periodDates[periodDates.length - 1])}`
-    : 'Gráfico sem registros no período selecionado';
+    : 'Gr├ífico sem registros no período selecionado';
 
   const agentChartData = [...(data.agents || [])].sort((a, b) => agentOrder === 'natural'
     ? 0
@@ -785,10 +857,24 @@ export const Dashboard: React.FC = () => {
       ? b.total_calls - a.total_calls
       : a.total_calls - b.total_calls);
 
+  const totalCalls = data?.overall?.total_calls || 0;
+  const callPercentage = (value: number | undefined) => totalCalls > 0 ? `${Math.round(((value || 0) / totalCalls) * 100)}% do total` : '0% do total';
+  const cityMapData = Object.values(lojaStats.reduce((cities: Record<string, { city: string; stores: string[]; totalCalls: number }>, loja: any) => {
+    const city = loja.location_city || loja.cidade || 'Cidade não identificada';
+    if (!cities[city]) cities[city] = { city, stores: [], totalCalls: 0 };
+    cities[city].stores.push(String(loja.loja));
+    cities[city].totalCalls += Number(loja.total_calls || 0);
+    return cities;
+  }, {})).sort((a, b) => b.totalCalls - a.totalCalls);
+
   return (
     <DashboardContainer>
-      <MenuButton onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-        {isSidebarOpen ? '✕' : '☰'}
+      <MenuButton
+        sidebarOpen={isSidebarOpen}
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        aria-label={isSidebarOpen ? 'Fechar barra lateral' : 'Abrir barra lateral'}
+      >
+        {isSidebarOpen ? '‹' : '☰'}
       </MenuButton>
       
       <Overlay isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen(false)} />
@@ -796,7 +882,7 @@ export const Dashboard: React.FC = () => {
       <Sidebar isOpen={isSidebarOpen}>
         <SidebarHeader>
           <SidebarTitle>
-            📊 Central de Chamadas
+            ◉ <IconeNavegacao src="/img/icone/discurso.png" alt="" /> Central de Chamadas
           </SidebarTitle>
         </SidebarHeader>
 
@@ -825,10 +911,11 @@ export const Dashboard: React.FC = () => {
           <FilterGroup>
             <FilterLabel>Agente</FilterLabel>
             <FilterSelect
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
+              multiple
+              value={selectedUsers}
+              onChange={(e) => setSelectedUsers(Array.from(e.target.selectedOptions, (option) => option.value))}
+              style={{ minHeight: '96px' }}
             >
-              <option value="">Todos</option>
               {filterOptions?.users.map((user) => (
                 <option key={user.username} value={user.username}>
                   {user.full_name}
@@ -872,11 +959,11 @@ export const Dashboard: React.FC = () => {
 
         <SidebarSection>
           <SectionTitle>Ações</SectionTitle>
-          <PrimaryButton onClick={applyFilters}>
-            🔍 Aplicar Filtros
+          <PrimaryButton onClick={() => applyFilters()}>
+            ⌕ <IconeNavegacao src="/img/icone/lista.png" alt="" /> Aplicar Filtros
           </PrimaryButton>
           <SecondaryButton onClick={resetFilters}>
-            🔄 Limpar Filtros
+            × <IconeNavegacao src="/img/icone/corona.png" alt="" /> Limpar Filtros
           </SecondaryButton>
         </SidebarSection>
 
@@ -892,7 +979,7 @@ export const Dashboard: React.FC = () => {
               color: 'white'
             }}
           >
-            📈 Visão Geral
+            ⌂ <IconeNavegacao src="/img/icone/crecimiento.png" alt="" /> Visão Geral
           </Button>
           <Button 
             onClick={() => {
@@ -904,7 +991,7 @@ export const Dashboard: React.FC = () => {
               color: 'white'
             }}
           >
-            🏆 Rankings
+            ▥ <IconeNavegacao src="/img/icone/trofeo.png" alt="" /> Rankings
           </Button>
           <Button 
             onClick={() => {
@@ -916,55 +1003,78 @@ export const Dashboard: React.FC = () => {
               color: 'white'
             }}
           >
-            📋 Registros
+            ▤ <IconeNavegacao src="/img/icone/lista.png" alt="" /> Registros
           </Button>
         </SidebarSection>
       </Sidebar>
 
-      <MainContent>
+      <MainContent sidebarOpen={isSidebarOpen}>
         <Header>
           <div>
             <HeaderTitle>Dashboard de Suporte Técnico</HeaderTitle>
             <HeaderSubtitle>
               Agentes conectados: {connectedAgents.length} | Última atualização: {new Date().toLocaleTimeString('pt-BR')}
             </HeaderSubtitle>
+            <AgentStrip aria-label="Filtro rápido por agente">
+              {filterOptions?.users.map((user) => {
+                const selected = selectedUsers.includes(user.username);
+                return (
+                  <AgentButton key={user.username} type="button" selected={selected} aria-pressed={selected} onClick={() => toggleAgent(user.username)}>
+                    <AgentAvatar selected={selected}>
+                      <AgentAvatarImage
+                        src={`/img/agents/${encodeURIComponent(user.username)}.jpg`}
+                        alt={`Foto de ${user.full_name}`}
+                        onError={(event) => {
+                          const image = event.currentTarget;
+                          if (image.src.toLowerCase().endsWith('.jpg')) image.src = `/img/agents/${encodeURIComponent(user.username)}.png`;
+                          else { image.onerror = null; image.src = '/img/agent-placeholder.svg'; }
+                        }}
+                      />
+                    </AgentAvatar>
+                    <span>{user.full_name}</span>
+                  </AgentButton>
+                );
+              })}
+              <AgentSelectionHint>Clique para selecionar vários agentes.</AgentSelectionHint>
+            </AgentStrip>
           </div>
         </Header>
 
         {activeTab === 'overview' && (
           <>
+            <OverviewContent>
             <KPIGrid>
               <KPICard color="#3b82f6">
                 <KPILabel>Total de Chamadas</KPILabel>
                 <KPIValue>{data?.overall?.total_calls || 0}</KPIValue>
-                <KPIChange>Volume total</KPIChange>
+                <KPIChange>{callPercentage(data?.overall?.total_calls)} · Volume total</KPIChange>
               </KPICard>
               <KPICard color="#10b981">
                 <KPILabel>Entrantes Atendidas</KPILabel>
                 <KPIValue>{data?.overall?.entrantes_atendidas || 0}</KPIValue>
-                <KPIChange>✅ Recebidas e atendidas</KPIChange>
+                <KPIChange>Atendidas</KPIChange>
               </KPICard>
               <KPICard color="#ef4444">
                 <KPILabel>Entrantes Não Atendidas</KPILabel>
                 <KPIValue>{data?.overall?.entrantes_nao_atendidas || 0}</KPIValue>
-                <KPIChange>❌ Recebidas mas não atendidas</KPIChange>
+                <KPIChange>Não atendidas</KPIChange>
               </KPICard>
               <KPICard color="#f59e0b">
                 <KPILabel>Salientes Atendidas</KPILabel>
                 <KPIValue>{data?.overall?.salientes_atendidas || 0}</KPIValue>
-                <KPIChange>📤 Realizadas e atendidas</KPIChange>
+                <KPIChange>Realizadas</KPIChange>
               </KPICard>
               <KPICard color="#8b5cf6">
                 <KPILabel>Duração Média</KPILabel>
                 <KPIValue>{Math.round(data?.overall?.avg_duration || 0)}s</KPIValue>
-                <KPIChange>⏱️ Média de atendimento</KPIChange>
+                <KPIChange>Média de atendimento</KPIChange>
               </KPICard>
             </KPIGrid>
 
             <ChartsGrid>
               <ChartCard>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                  <ChartTitle>📊 Chamadas por Agente</ChartTitle>
+                  <ChartTitle><span style={{ color: '#64d8ff', fontSize: '28px', textShadow: '0 0 14px #64d8ff' }}>▥</span> Chamadas por Agente</ChartTitle>
                   <ChartOrderSelect value={agentOrder} onChange={(event) => setAgentOrder(event.target.value as 'natural' | 'desc' | 'asc')}>
                     <option value="natural">Ordem original</option>
                     <option value="desc">Maior para menor</option>
@@ -994,45 +1104,17 @@ export const Dashboard: React.FC = () => {
               </ChartCard>
 
               <ChartCard>
-                <ChartTitle>🥧 Distribuição de Chamadas</ChartTitle>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Entrantes Atendidas', value: data?.overall?.entrantes_atendidas || 0 },
-                        { name: 'Entrantes Não Atendidas', value: data?.overall?.entrantes_nao_atendidas || 0 },
-                        { name: 'Salientes Atendidas', value: data?.overall?.salientes_atendidas || 0 },
-                        { name: 'Salientes Não Atendidas', value: data?.overall?.salientes_nao_atendidas || 0 },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      <Cell fill="#10b981" />
-                      <Cell fill="#ef4444" />
-                      <Cell fill="#f59e0b" />
-                      <Cell fill="#8b5cf6" />
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#1e293b', 
-                        border: 'none', 
-                        borderRadius: '8px',
-                        color: 'white'
-                      }} 
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ChartTitle><span style={{ color: '#ff6b9d', fontSize: '28px', textShadow: '0 0 14px #ff6b9d' }}>⌖</span> Mapa referencial das lojas</ChartTitle>
+                <div style={{ textAlign: 'center', color: '#64748b', marginBottom: '12px' }}>Distribuição aproximada por cidade.</div>
+                <div style={{ minHeight: '300px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '12px', alignContent: 'center', padding: '24px', borderRadius: '20px', background: '#eaf3ff' }}>
+                  {cityMapData.map((city) => <div key={city.city} style={{ textAlign: 'center', padding: '14px', borderRadius: '16px', background: 'white', boxShadow: '0 10px 24px rgba(30,64,175,0.12)' }}><div style={{ fontSize: '24px' }}>●</div><strong>{city.city}</strong><div style={{ fontSize: '11px', color: '#64748b' }}>{city.stores.length} lojas · {city.totalCalls} chamadas</div></div>)}
+                </div>
               </ChartCard>
             </ChartsGrid>
 
             <ChartCard>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                <ChartTitle>🕒 Horários com mais chamadas</ChartTitle>
+                <ChartTitle><span style={{ color: '#ffd166', fontSize: '28px', textShadow: '0 0 14px #ffd166' }}>◷</span> Horários com mais chamadas</ChartTitle>
                 <ChartActions>
                   <ChartActionButton active={hourlyView === 'general'} onClick={() => setHourlyView('general')}>Geral</ChartActionButton>
                   <ChartActionButton active={hourlyView === 'incoming'} onClick={() => setHourlyView('incoming')}>Recebidas</ChartActionButton>
@@ -1043,45 +1125,47 @@ export const Dashboard: React.FC = () => {
                 </ChartActions>
               </div>
               <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={hourlyChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                <ComposedChart data={hourlyChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="hour" stroke="#64748b" fontSize={11} interval={0} angle={-45} textAnchor="end" height={70} />
                   <YAxis allowDecimals={false} stroke="#64748b" fontSize={12} />
                   <Tooltip />
                   <Legend />
                   <Bar dataKey="atendidas" stackId="a" fill="#10b981" name="Atendidas" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="nao_atendidas" stackId="a" fill="#ef4444" name="Não Atendidas" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  
+                <Line type="monotone" dataKey="nao_atendidas" stroke="#ef4444" strokeWidth={2.5} strokeDasharray="2 7" dot={{ r: 4 }} name="Não Atendidas" />
+                </ComposedChart>
               </ResponsiveContainer>
               <ChartPeriod>{periodLabel}</ChartPeriod>
             </ChartCard>
+            </OverviewContent>
           </>
         )}
 
         {activeTab === 'tops' && (
           <>
             <TopList>
-              <ChartTitle>🏪 Top Lojas com mais atendimentos</ChartTitle>
-              {lojaStats.slice(0, 5).map((loja, index) => (
+              <ChartTitle>­ƒÅ¬ Top Lojas com mais atendimentos</ChartTitle>
+              {[...lojaStats].sort((a, b) => (b.entrantes_atendidas || 0) - (a.entrantes_atendidas || 0)).slice(0, 5).map((loja, index) => (
                 <TopItem key={loja.loja}>
                   <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
                   <TopInfo>
-                    <TopName>Loja {loja.loja}</TopName>
-                    <TopMetric>Atendidas: {loja.entrantes_atendidas} | Não atendidas: {loja.entrantes_nao_atendidas}</TopMetric>
+                    <TopName>Loja {loja.loja}{(loja.location_city || loja.cidade) ? `, ${loja.location_city || loja.cidade}` : ""}</TopName>
+                    <TopMetric>Entrantes atendidas</TopMetric>
                   </TopInfo>
-                  <TopValue>{loja.total_calls}</TopValue>
+                  <TopValue>{loja.entrantes_atendidas || 0}</TopValue>
                 </TopItem>
               ))}
               {lojaStats.length === 0 && (
                 <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
-                  Não há dados de lojas disponíveis
+                  Não h├í dados de lojas dispon├¡veis
                 </div>
               )}
             </TopList>
 
             <ChartsGrid>
               <TopList>
-                <ChartTitle>⭐ Top 5 Agentes mais ativos</ChartTitle>
+                <ChartTitle>Ô¡É Top 5 Agentes mais ativos</ChartTitle>
                 {topPerformers.topAgents.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1094,13 +1178,13 @@ export const Dashboard: React.FC = () => {
                 ))}
                 {topPerformers.topAgents.length === 0 && (
                   <div style={{ textAlign: 'center', color: '#64748b', padding: '20px' }}>
-                    Não há dados disponíveis
+                    Não h├í dados dispon├¡veis
                   </div>
                 )}
               </TopList>
 
               <TopList>
-                <ChartTitle>✅ Top 5 Agentes com mais entrantes atendidas</ChartTitle>
+                <ChartTitle><IconeTitulo src="/img/icone/exito.png" alt="" /> Top 5 Agentes com mais entrantes atendidas</ChartTitle>
                 {topPerformers.topAtendidas.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1114,7 +1198,7 @@ export const Dashboard: React.FC = () => {
               </TopList>
 
               <TopList>
-                <ChartTitle>⚠️ Top 5 Agentes com mais entrantes não atendidas</ChartTitle>
+                <ChartTitle><IconeTitulo src="/img/icone/corona.png" alt="" /> Top 5 Agentes com mais entrantes não atendidas</ChartTitle>
                 {topPerformers.topNaoAtendidas.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1128,7 +1212,7 @@ export const Dashboard: React.FC = () => {
               </TopList>
 
               <TopList>
-                <ChartTitle>📤 Top 5 Agentes com mais salientes atendidas</ChartTitle>
+                <ChartTitle>­ƒôñ Top 5 Agentes com mais salientes atendidas</ChartTitle>
                 {topPerformers.topSalientes.map((item, index) => (
                   <TopItem key={index}>
                     <TopRank rank={index + 1 as number}>{index + 1}</TopRank>
@@ -1148,7 +1232,7 @@ export const Dashboard: React.FC = () => {
           <>
             {filteredCalls.length > 0 ? (
               <ChartCard>
-                <ChartTitle>📋 Registros filtrados ({filteredCalls.length})</ChartTitle>
+                <ChartTitle>­ƒôï ▤ <IconeNavegacao src="/img/icone/lista.png" alt="" /> Registros filtrados ({filteredCalls.length})</ChartTitle>
                 <div style={{ overflowX: 'auto' }}>
                   <CallsTable>
                     <thead>
@@ -1170,7 +1254,7 @@ export const Dashboard: React.FC = () => {
                           <TableCell>{call.agent_full_name}</TableCell>
                           <TableCell>{call.number}</TableCell>
                           <TableCell>{call.name || '-'}</TableCell>
-                          <TableCell>{call.loja}</TableCell>
+                          <TableCell>Loja {call.loja}{call.location_city ? `, ${call.location_city}` : ""}</TableCell>
                           <TableCell>{call.sector_name}</TableCell>
                           <TableCell>{call.type_description}</TableCell>
                           <TableCell>{call.duration}s</TableCell>
@@ -1183,7 +1267,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <ChartCard>
                 <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>📊</div>
+                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>Dados</div>
                   <h3>Não há registros para exibir</h3>
                   <p>Aplique filtros para ver os dados específicos</p>
                 </div>

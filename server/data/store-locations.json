@@ -1,0 +1,709 @@
+{
+  "99": {
+    "loja": "99",
+    "tipo": "CD",
+    "bairro": "Bairro da Praça",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "51": {
+    "loja": "51",
+    "tipo": "Komprão",
+    "bairro": "Boa Vista",
+    "cidade": "Joinville",
+    "uf": "SC"
+  },
+  "97": {
+    "loja": "97",
+    "tipo": "CD - Virtual",
+    "bairro": "Bairro da Praça",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "52": {
+    "loja": "52",
+    "tipo": "Koch",
+    "bairro": "Morretes",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "889": {
+    "loja": "889",
+    "tipo": "CD 02",
+    "bairro": "Areias de Baixo",
+    "cidade": "Gov Celso Ramos",
+    "uf": "SC"
+  },
+  "53": {
+    "loja": "53",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "887": {
+    "loja": "887",
+    "tipo": "CD 02 - Virtual",
+    "bairro": "Areias de Baixo",
+    "cidade": "Gov Celso Ramos",
+    "uf": "SC"
+  },
+  "54": {
+    "loja": "54",
+    "tipo": "Komprão",
+    "bairro": "São João do Rio Vermelho",
+    "cidade": "Florianópolis",
+    "uf": "SC"
+  },
+  "95": {
+    "loja": "95",
+    "tipo": "ADM - Virtual",
+    "bairro": "Morretes",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "55": {
+    "loja": "55",
+    "tipo": "Komprão",
+    "bairro": "Cedro",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "96": {
+    "loja": "96",
+    "tipo": "ADM - Virtual",
+    "bairro": "Centro",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "56": {
+    "loja": "56",
+    "tipo": "Komprão",
+    "bairro": "Areias do Meio",
+    "cidade": "Gov Celso Ramos",
+    "uf": "SC"
+  },
+  "1": {
+    "loja": "1",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "57": {
+    "loja": "57",
+    "tipo": "Komprão",
+    "bairro": "Campo Duna",
+    "cidade": "Imbituba",
+    "uf": "SC"
+  },
+  "2": {
+    "loja": "2",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "58": {
+    "loja": "58",
+    "tipo": "Komprão",
+    "bairro": "Ambrosio",
+    "cidade": "Garopaba",
+    "uf": "SC"
+  },
+  "3": {
+    "loja": "3",
+    "tipo": "Koch",
+    "bairro": "Monte Alegre",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "59": {
+    "loja": "59",
+    "tipo": "Komprão",
+    "bairro": "Jarivatuba",
+    "cidade": "Joinville",
+    "uf": "SC"
+  },
+  "4": {
+    "loja": "4",
+    "tipo": "Koch",
+    "bairro": "Andorinha",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "60": {
+    "loja": "60",
+    "tipo": "Komprão",
+    "bairro": "Nova Brasília",
+    "cidade": "Imbituba",
+    "uf": "SC"
+  },
+  "5": {
+    "loja": "5",
+    "tipo": "Koch",
+    "bairro": "São João",
+    "cidade": "Itajaí",
+    "uf": "SC"
+  },
+  "61": {
+    "loja": "61",
+    "tipo": "Komprão",
+    "bairro": "Ribanceiras",
+    "cidade": "Imbituba",
+    "uf": "SC"
+  },
+  "6": {
+    "loja": "6",
+    "tipo": "Koch",
+    "bairro": "Meia Praia",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "62": {
+    "loja": "62",
+    "tipo": "Komprão",
+    "bairro": "Progresso",
+    "cidade": "Laguna",
+    "uf": "SC"
+  },
+  "7": {
+    "loja": "7",
+    "tipo": "Koch",
+    "bairro": "Perequê",
+    "cidade": "Porto Belo",
+    "uf": "SC"
+  },
+  "63": {
+    "loja": "63",
+    "tipo": "Koch",
+    "bairro": "Itacolomi",
+    "cidade": "Balneario Piçarras",
+    "uf": "SC"
+  },
+  "8": {
+    "loja": "8",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "64": {
+    "loja": "64",
+    "tipo": "Komprão",
+    "bairro": "Ilha da Figueira",
+    "cidade": "Jaragua do Sul",
+    "uf": "SC"
+  },
+  "9": {
+    "loja": "9",
+    "tipo": "Koch",
+    "bairro": "Casa Branca",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "65": {
+    "loja": "65",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Rio Negrinho",
+    "uf": "SC"
+  },
+  "10": {
+    "loja": "10",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "São João Batista",
+    "uf": "SC"
+  },
+  "66": {
+    "loja": "66",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Tubarão",
+    "uf": "SC"
+  },
+  "11": {
+    "loja": "11",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Navegantes",
+    "uf": "SC"
+  },
+  "67": {
+    "loja": "67",
+    "tipo": "Komprão",
+    "bairro": "Bela Vista",
+    "cidade": "Palhoça",
+    "uf": "SC"
+  },
+  "12": {
+    "loja": "12",
+    "tipo": "Komprão",
+    "bairro": "Monte Alegre",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "68": {
+    "loja": "68",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "São João Batista",
+    "uf": "SC"
+  },
+  "13": {
+    "loja": "13",
+    "tipo": "Koch",
+    "bairro": "Rio Caveiras",
+    "cidade": "Biguaçu",
+    "uf": "SC"
+  },
+  "69": {
+    "loja": "69",
+    "tipo": "Komprão",
+    "bairro": "Sertaozinho",
+    "cidade": "Bombinhas",
+    "uf": "SC"
+  },
+  "14": {
+    "loja": "14",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "70": {
+    "loja": "70",
+    "tipo": "Komprão",
+    "bairro": "Humaita de Cima",
+    "cidade": "Tubarão",
+    "uf": "SC"
+  },
+  "15": {
+    "loja": "15",
+    "tipo": "Komprão",
+    "bairro": "Vila Nova",
+    "cidade": "Porto Belo",
+    "uf": "SC"
+  },
+  "71": {
+    "loja": "71",
+    "tipo": "Komprão",
+    "bairro": "Industrial Sul",
+    "cidade": "Rio Negrinho",
+    "uf": "SC"
+  },
+  "16": {
+    "loja": "16",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Balneário Camboriú",
+    "uf": "SC"
+  },
+  "72": {
+    "loja": "72",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Ilhota",
+    "uf": "SC"
+  },
+  "17": {
+    "loja": "17",
+    "tipo": "Komprão",
+    "bairro": "Nossa Senhora das Graças",
+    "cidade": "Navegantes",
+    "uf": "SC"
+  },
+  "73": {
+    "loja": "73",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Canelinha",
+    "uf": "SC"
+  },
+  "18": {
+    "loja": "18",
+    "tipo": "Komprão",
+    "bairro": "Morretes",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "74": {
+    "loja": "74",
+    "tipo": "Komprão",
+    "bairro": "Espinheiros",
+    "cidade": "Itajaí",
+    "uf": "SC"
+  },
+  "19": {
+    "loja": "19",
+    "tipo": "Koch",
+    "bairro": "Areias",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "75": {
+    "loja": "75",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Palhoça",
+    "uf": "SC"
+  },
+  "20": {
+    "loja": "20",
+    "tipo": "Koch",
+    "bairro": "Armação",
+    "cidade": "Penha",
+    "uf": "SC"
+  },
+  "76": {
+    "loja": "76",
+    "tipo": "Koch",
+    "bairro": "Ubatuba",
+    "cidade": "São Francisco do Sul",
+    "uf": "SC"
+  },
+  "21": {
+    "loja": "21",
+    "tipo": "Komprão",
+    "bairro": "Areias",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "77": {
+    "loja": "77",
+    "tipo": "Komprão",
+    "bairro": "Vila Nova",
+    "cidade": "Joinville",
+    "uf": "SC"
+  },
+  "22": {
+    "loja": "22",
+    "tipo": "Komprão",
+    "bairro": "São Cristóvão",
+    "cidade": "Barra Vellha",
+    "uf": "SC"
+  },
+  "78": {
+    "loja": "78",
+    "tipo": "Koch",
+    "bairro": "Areias",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "23": {
+    "loja": "23",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Penha",
+    "uf": "SC"
+  },
+  "79": {
+    "loja": "79",
+    "tipo": "Komprão",
+    "bairro": "Ponte do Imaruim",
+    "cidade": "Palhoça",
+    "uf": "SC"
+  },
+  "24": {
+    "loja": "24",
+    "tipo": "Komprão",
+    "bairro": "Joaia",
+    "cidade": "Tijucas",
+    "uf": "SC"
+  },
+  "80": {
+    "loja": "80",
+    "tipo": "Koch",
+    "bairro": "Santa Terezinha",
+    "cidade": "Gaspar",
+    "uf": "SC"
+  },
+  "25": {
+    "loja": "25",
+    "tipo": "Komprão",
+    "bairro": "Itajuba",
+    "cidade": "Barra Velha",
+    "uf": "SC"
+  },
+  "81": {
+    "loja": "81",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "26": {
+    "loja": "26",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Guaramirim",
+    "uf": "SC"
+  },
+  "82": {
+    "loja": "82",
+    "tipo": "Komprão",
+    "bairro": "Tabuleiro dos Oliveiras",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "27": {
+    "loja": "27",
+    "tipo": "Komprão",
+    "bairro": "Nossa Senhora das Paz",
+    "cidade": "Balneário Piçarras",
+    "uf": "SC"
+  },
+  "83": {
+    "loja": "83",
+    "tipo": "Komprão",
+    "bairro": "Bom viver",
+    "cidade": "Biguaçu",
+    "uf": "SC"
+  },
+  "28": {
+    "loja": "28",
+    "tipo": "Komprão",
+    "bairro": "Acaraí",
+    "cidade": "São Francisco do Sul",
+    "uf": "SC"
+  },
+  "84": {
+    "loja": "84",
+    "tipo": "Komprão",
+    "bairro": "Pedra Branca",
+    "cidade": "Palhoça",
+    "uf": "SC"
+  },
+  "29": {
+    "loja": "29",
+    "tipo": "Komprão",
+    "bairro": "Real Parque",
+    "cidade": "São José",
+    "uf": "SC"
+  },
+  "85": {
+    "loja": "85",
+    "tipo": "Komprão",
+    "bairro": "Vila Becker",
+    "cidade": "Santo Amaro da Imperatriz",
+    "uf": "SC"
+  },
+  "30": {
+    "loja": "30",
+    "tipo": "Komprão",
+    "bairro": "Santa Rita",
+    "cidade": "Brusque",
+    "uf": "SC"
+  },
+  "86": {
+    "loja": "86",
+    "tipo": "Komprão",
+    "bairro": "Santo Antônio de Pádua",
+    "cidade": "Tubarão",
+    "uf": "SC"
+  },
+  "31": {
+    "loja": "31",
+    "tipo": "Koch",
+    "bairro": "Bombas",
+    "cidade": "Bombinhas",
+    "uf": "SC"
+  },
+  "87": {
+    "loja": "87",
+    "tipo": "Komprão",
+    "bairro": "",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "32": {
+    "loja": "32",
+    "tipo": "Komprão",
+    "bairro": "Itoupava Central",
+    "cidade": "Blumenau",
+    "uf": "SC"
+  },
+  "33": {
+    "loja": "33",
+    "tipo": "Komprão",
+    "bairro": "Santa Terezinha",
+    "cidade": "Gaspar",
+    "uf": "SC"
+  },
+  "35": {
+    "loja": "35",
+    "tipo": "Komprão",
+    "bairro": "Testo Rega",
+    "cidade": "Pomerode",
+    "uf": "SC"
+  },
+  "36": {
+    "loja": "36",
+    "tipo": "Komprão",
+    "bairro": "Guarani",
+    "cidade": "Brusque",
+    "uf": "SC"
+  },
+  "37": {
+    "loja": "37",
+    "tipo": "Komprão",
+    "bairro": "Perequê",
+    "cidade": "Porto Belo",
+    "uf": "SC"
+  },
+  "38": {
+    "loja": "38",
+    "tipo": "Komprão",
+    "bairro": "Nova Esperança",
+    "cidade": "Balneário Camboriú",
+    "uf": "SC"
+  },
+  "39": {
+    "loja": "39",
+    "tipo": "Komprão",
+    "bairro": "Barra do Rio Molha",
+    "cidade": "Jaraguá do Sul",
+    "uf": "SC"
+  },
+  "40": {
+    "loja": "40",
+    "tipo": "Komprão",
+    "bairro": "Agua Verde",
+    "cidade": "Blumenau",
+    "uf": "SC"
+  },
+  "41": {
+    "loja": "41",
+    "tipo": "Koch",
+    "bairro": "Meia Praia",
+    "cidade": "Itapema",
+    "uf": "SC"
+  },
+  "42": {
+    "loja": "42",
+    "tipo": "Komprão",
+    "bairro": "Vila Lenzi",
+    "cidade": "Jaraguá do Sul",
+    "uf": "SC"
+  },
+  "43": {
+    "loja": "43",
+    "tipo": "Komprão",
+    "bairro": "Santo Antônio",
+    "cidade": "Balneário Piçarras",
+    "uf": "SC"
+  },
+  "44": {
+    "loja": "44",
+    "tipo": "Koch",
+    "bairro": "Centro",
+    "cidade": "Navegantes",
+    "uf": "SC"
+  },
+  "45": {
+    "loja": "45",
+    "tipo": "Komprão",
+    "bairro": "Bom Retiro",
+    "cidade": "Joinville",
+    "uf": "SC"
+  },
+  "46": {
+    "loja": "46",
+    "tipo": "Komprão",
+    "bairro": "Centro",
+    "cidade": "Itajaí",
+    "uf": "SC"
+  },
+  "47": {
+    "loja": "47",
+    "tipo": "Koch",
+    "bairro": "Ingleses do Rio Vermelho",
+    "cidade": "Florianópolis",
+    "uf": "SC"
+  },
+  "48": {
+    "loja": "48",
+    "tipo": "Komprão",
+    "bairro": "Gravatá",
+    "cidade": "Penha",
+    "uf": "SC"
+  },
+  "49": {
+    "loja": "49",
+    "tipo": "Komprão",
+    "bairro": "Estados",
+    "cidade": "Indaial",
+    "uf": "SC"
+  },
+  "50": {
+    "loja": "50",
+    "tipo": "Komprão",
+    "bairro": "Volta Redonda",
+    "cidade": "Araquari",
+    "uf": "SC"
+  },
+  "503": {
+    "loja": "503",
+    "tipo": "Farmacia Koch",
+    "bairro": "Bombas",
+    "cidade": "Bombinhas",
+    "uf": "SC"
+  },
+  "504": {
+    "loja": "504",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Itoupava Central",
+    "cidade": "Blumenau",
+    "uf": "SC"
+  },
+  "505": {
+    "loja": "505",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Areias",
+    "cidade": "Camboriú",
+    "uf": "SC"
+  },
+  "506": {
+    "loja": "506",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Real Parque",
+    "cidade": "São José",
+    "uf": "SC"
+  },
+  "507": {
+    "loja": "507",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Testo Rega",
+    "cidade": "Pomerode",
+    "uf": "SC"
+  },
+  "508": {
+    "loja": "508",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Guarani",
+    "cidade": "Brusque",
+    "uf": "SC"
+  },
+  "509": {
+    "loja": "509",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Perequê",
+    "cidade": "Porto Belo",
+    "uf": "SC"
+  },
+  "510": {
+    "loja": "510",
+    "tipo": "Farmacia Komprão",
+    "bairro": "Nova Esperança",
+    "cidade": "Balneário Camboriú",
+    "uf": "SC"
+  },
+  "105": {
+    "loja": "105",
+    "tipo": "Komprão",
+    "bairro": "Campinas",
+    "cidade": "São José, Santa Catarina",
+    "uf": "SC"
+  }
+}
