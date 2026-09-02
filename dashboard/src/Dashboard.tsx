@@ -1243,7 +1243,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b' }}>
                               <span>{city.totalCalls} chamadas</span>
-                              <span>{city.stores.length} lojas</span>
+                              {/*<span>{city.stores.length} lojas</span>  -----comentado porq no trae la info correcta*/}
                             </div>
 
                             {isExpanded && (
