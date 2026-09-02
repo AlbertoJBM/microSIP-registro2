@@ -55,6 +55,8 @@ let db = null;
 const dbPath = path.join(__dirname, '../data', 'central_logs.db');
 const storeLocationsPath = path.join(__dirname, '../data', 'store-locations.json');
 let storeLocations = {};
+// Runtime connected agents (usernames)
+const connectedAgents = new Set();
 try {
     if (fs.existsSync(storeLocationsPath)) {
         storeLocations = JSON.parse(fs.readFileSync(storeLocationsPath, 'utf8'));
@@ -572,11 +574,20 @@ app.get('/api/sync/status/:username', (req, res) => {
 });
 // Socket.io
 io.on('connection', (socket) => {
+    // send current connected agents to the newly connected socket (dashboard or others)
+    socket.emit('agents-list', Array.from(connectedAgents));
     const agentInfo = socket.handshake.auth?.agentInfo;
     if (agentInfo?.username) {
         console.log(`🔌 Agent connected: ${agentInfo.fullName} (${agentInfo.username})`);
+        // add to in-memory connected set and notify all clients
+        connectedAgents.add(agentInfo.username);
+        io.emit('agent-connected', agentInfo.username);
+        io.emit('agents-list', Array.from(connectedAgents));
         socket.on('disconnect', () => {
             console.log(`❌ Agent disconnected: ${agentInfo.fullName}`);
+            connectedAgents.delete(agentInfo.username);
+            io.emit('agent-disconnected', agentInfo.username);
+            io.emit('agents-list', Array.from(connectedAgents));
         });
         socket.on('logs-synced', (data) => {
             console.log(`📊 ${data.agentInfo.fullName} synced ${data.count} logs`);

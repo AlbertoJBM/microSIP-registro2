@@ -342,9 +342,9 @@ const AgentAvatarImage = styled.img`
   width: 100%; height: 100%; object-fit: cover;
 `;
 
-const AgentSelectionHint = styled.span`
+{/*const AgentSelectionHint = styled.span`
   margin-left: auto; align-self: center; color: #9fb3ca; font-size: 12px;
-`;
+`;*/}
 
 const IconeNavegacao = styled.img`width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(100,216,255,.45)); flex: 0 0 auto;`;
 const IconeTitulo = styled.img`width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(100,216,255,.5)); flex: 0 0 auto;`;
@@ -581,6 +581,10 @@ export const Dashboard: React.FC = () => {
     topMissed: []
   });
 
+  // City ranking order and expanded city for showing stores
+  const [cityOrder, setCityOrder] = useState<'desc' | 'asc'>('desc');
+  const [expandedCity, setExpandedCity] = useState<string | null>(null);
+
   // Filter states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -725,6 +729,37 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const escapeCSV = (value: any) => {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const exportFilteredCallsCSV = () => {
+    if (!filteredCalls || filteredCalls.length === 0) return;
+    const headers = ['id','callId','data','agent_username','agent_full_name','number','name','loja','location_city','sector_name','type_description','duration','synced_at','info'];
+    const rows = filteredCalls.map(c => headers.map(h => {
+      switch (h) {
+        case 'data': return escapeCSV(c.formatted_time);
+        default: return escapeCSV(c[h as keyof CallRecord]);
+      }
+    }).join(','));
+
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `registros_export_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const calculateTopPerformers = () => {
     if (!data || !data.agents) return;
 
@@ -807,6 +842,10 @@ export const Dashboard: React.FC = () => {
       setConnectedAgents(prev => prev.filter(a => a !== agentName));
     });
 
+    socket.on('agents-list', (agents: string[]) => {
+      setConnectedAgents(Array.isArray(agents) ? agents : []);
+    });
+
     // Actualizar cada 30 segundos
     const interval = setInterval(() => {
       const currentFilters = new URLSearchParams(filterParamsRef.current);
@@ -878,7 +917,7 @@ export const Dashboard: React.FC = () => {
 
   const totalCalls = data?.overall?.total_calls || 0;
   const callPercentage = (value: number | undefined) => totalCalls > 0 ? `${Math.round(((value || 0) / totalCalls) * 100)}% do total` : '0% do total';
-  const cityMapData = Object.values((filteredCalls.length > 0 ? filteredCalls : lojaStats).reduce((cities: Record<string, { city: string; stores: string[]; totalCalls: number; atendidas: number }>, item: any) => {
+  let cityMapData = Object.values((filteredCalls.length > 0 ? filteredCalls : lojaStats).reduce((cities: Record<string, { city: string; stores: string[]; totalCalls: number; atendidas: number }>, item: any) => {
     const resolvedCity = item.location_city || item.cidade || item.city || 'Cidade não identificada';
     const city = String(resolvedCity || 'Cidade não identificada').trim();
 
@@ -896,8 +935,13 @@ export const Dashboard: React.FC = () => {
     cities[city].atendidas += Number.isFinite(attendedValue) ? attendedValue : 0;
 
     return cities;
-  }, {})).sort((a, b) => b.totalCalls - a.totalCalls || b.atendidas - a.atendidas);
+  }, {}));
 
+  cityMapData = cityMapData.sort((a, b) => {
+    const primary = cityOrder === 'desc' ? b.totalCalls - a.totalCalls : a.totalCalls - b.totalCalls;
+    if (primary !== 0) return primary;
+    return cityOrder === 'desc' ? b.atendidas - a.atendidas : a.atendidas - b.atendidas;
+  });
   return (
     <DashboardContainer>
       <MenuButton
@@ -1066,7 +1110,7 @@ export const Dashboard: React.FC = () => {
                   </AgentButton>
                 );
               })}
-              <AgentSelectionHint>Clique para selecionar vários agentes.</AgentSelectionHint>
+              {/* <AgentSelectionHint>Clique para selecionar vários agentes.</AgentSelectionHint> */}
             </AgentStrip>
           </div>
         </Header>
@@ -1140,18 +1184,45 @@ export const Dashboard: React.FC = () => {
                   </ChartCard>
 
                   <ChartCard>
-                    <ChartTitle><span style={{ color: '#ff6b9d', fontSize: '28px', textShadow: '0 0 14px #ff6b9d' }}>⌖</span> Ranking por cidade</ChartTitle>
-                    <div style={{ color: '#64748b', marginBottom: '18px', fontSize: '13px' }}>
-                      Top cidades por volume e taxa de atendimentos.
-                    </div>
+                    <SectionHeaderRow>
+                      <ChartTitle><span style={{ color: '#ff6b9d', fontSize: '28px', textShadow: '0 0 14px #ff6b9d' }}>⌖</span> Ranking por cidade</ChartTitle>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <ChartOrderSelect value={cityOrder} onChange={(e) => setCityOrder(e.target.value as 'desc' | 'asc')}>
+                          <option value="desc">Maior para menor</option>
+                          <option value="asc">Menor para maior</option>
+                        </ChartOrderSelect>
+                      </div>
+                    </SectionHeaderRow>
+
+                    {/*<div style={{ color: '#64748b', marginBottom: '18px', fontSize: '13px' }}>
+                      Top cidades por volume e taxa de atendimentos. Clique para ver lojas.
+                    </div>*/}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '300px' }}>
                       {cityMapData.length > 0 ? cityMapData.slice(0, 6).map((city, index) => {
                         const maxCalls = cityMapData[0]?.totalCalls || 1;
                         const barWidth = Math.max((city.totalCalls / maxCalls) * 100, 10);
+                        const isExpanded = expandedCity === city.city;
+
+                        // Aggregate stores for this city
+                        const source = filteredCalls.length > 0 ? filteredCalls : lojaStats;
+                        const storesMap: Record<string, { loja: string; totalCalls: number; atendidas: number }> = {};
+                        source.forEach((item: any) => {
+                          const resolvedCity = item.location_city || item.cidade || item.city || 'Cidade não identificada';
+                          const cityName = String(resolvedCity || 'Cidade não identificada').trim();
+                          if (cityName !== city.city) return;
+                          const lojaRef = item.loja ?? item.store ?? item.location_loja ?? 'Loja não identificada';
+                          const lojaKey = String(lojaRef);
+                          if (!storesMap[lojaKey]) storesMap[lojaKey] = { loja: lojaKey, totalCalls: 0, atendidas: 0 };
+                          const totalCallsValue = Number(item.total_calls ?? item.calls ?? 1);
+                          const attendedValue = Number(item.entrantes_atendidas ?? (item.duration !== undefined && Number(item.duration) > 0 ? 1 : 0));
+                          storesMap[lojaKey].totalCalls += Number.isFinite(totalCallsValue) ? totalCallsValue : 1;
+                          storesMap[lojaKey].atendidas += Number.isFinite(attendedValue) ? attendedValue : 0;
+                        });
+                        const storesData = Object.values(storesMap).sort((a, b) => b.totalCalls - a.totalCalls);
 
                         return (
                           <div key={city.city} style={{ padding: '10px 12px', borderRadius: '12px', background: '#f8fbff', border: '1px solid rgba(59,130,246,0.12)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', gap: '8px', cursor: 'pointer' }} onClick={() => setExpandedCity(isExpanded ? null : city.city)}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#2563eb', color: 'white', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: '12px' }}>
                                   {index + 1}
@@ -1160,8 +1231,11 @@ export const Dashboard: React.FC = () => {
                                   {city.city}
                                 </div>
                               </div>
-                              <div style={{ fontWeight: 700, color: '#10b981', fontSize: '13px', whiteSpace: 'nowrap' }}>
-                                {city.atendidas} atendidas
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ fontWeight: 700, color: '#10b981', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                                  {city.atendidas} atendidas
+                                </div>
+                                <div style={{ fontSize: 12, color: '#475569' }}>{isExpanded ? 'Ocultar' : 'Ver lojas'}</div>
                               </div>
                             </div>
                             <div style={{ height: '10px', background: '#dfeafc', borderRadius: '999px', overflow: 'hidden' }}>
@@ -1171,6 +1245,31 @@ export const Dashboard: React.FC = () => {
                               <span>{city.totalCalls} chamadas</span>
                               <span>{city.stores.length} lojas</span>
                             </div>
+
+                            {isExpanded && (
+                              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {storesData.length > 0 ? storesData.map((s) => {
+                                  const maxStoreCalls = storesData[0]?.totalCalls || 1;
+                                  const storeBar = Math.max((s.totalCalls / maxStoreCalls) * 100, 6);
+                                  return (
+                                    <div key={s.loja} style={{ padding: '8px', borderRadius: 8, background: 'white', border: '1px solid rgba(15,23,42,0.06)' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                        <div style={{ fontWeight: 700, color: '#0f172a' }}>Loja {s.loja}</div>
+                                        <div style={{ fontSize: 13, color: '#10b981' }}>{s.atendidas} atendidas</div>
+                                      </div>
+                                      <div style={{ height: 8, background: '#eef2ff', borderRadius: 999, overflow: 'hidden' }}>
+                                        <div style={{ width: `${storeBar}%`, height: '100%', background: 'linear-gradient(90deg,#3b82f6,#10b981)' }} />
+                                      </div>
+                                      <div style={{ marginTop: 6, fontSize: 11, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>{s.totalCalls} chamadas</span>
+                                      </div>
+                                    </div>
+                                  );
+                                }) : (
+                                  <div style={{ color: '#64748b', fontSize: 13 }}>Nenhuma loja encontrada para esta cidade.</div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       }) : (
@@ -1306,7 +1405,12 @@ export const Dashboard: React.FC = () => {
           <>
             {filteredCalls.length > 0 ? (
               <ChartCard>
-                <ChartTitle>Registros filtrados ({filteredCalls.length})</ChartTitle>
+                <SectionHeaderRow>
+                  <ChartTitle>Registros filtrados ({filteredCalls.length})</ChartTitle>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <ChartActionButton onClick={exportFilteredCallsCSV}>Exportar CSV</ChartActionButton>
+                  </div>
+                </SectionHeaderRow>
                 <div style={{ overflowX: 'auto' }}>
                   <CallsTable>
                     <thead>
