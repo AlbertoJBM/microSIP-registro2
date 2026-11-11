@@ -14,8 +14,8 @@ Sistema centralizado que recolecta logs de llamadas de múltiples máquinas con 
 │            │                                            │
 │            │ Agente lee cada 5 seg                      │
 │ ┌──────────▼───────────────────────────────────────┐   │
-│ │ Agente (Node.js)                                 │   │
-│ │ node dist/index.js                               │   │
+│ │ Agente (Go, un .exe)                             │   │
+│ │ MicroSIP-Agent.exe                               │   │
 │ └──────────┬───────────────────────────────────────┘   │
 │            │                                            │
 └────────────┼────────────────────────────────────────────┘
@@ -60,7 +60,7 @@ Sistema centralizado que recolecta logs de llamadas de múltiples máquinas con 
 
 | Componente | Tecnología | Propósito |
 |-----------|-----------|----------|
-| **Agent** | Node.js + TypeScript | Lee MicroSIP local, envía al servidor |
+| **Agent** | Go (un .exe) | Lee MicroSIP local, envía al servidor |
 | **Server** | Express + Socket.IO | Centraliza datos, sirve API |
 | **Database** | SQLite | Almacena llamadas y agentes |
 | **Dashboard** | React + Vite | UI en tiempo real |
@@ -179,9 +179,9 @@ call-log-sync/
 │   └── dist/              ← Compilado
 │
 ├── agent/
-│   ├── src/index.ts       ← AGENTE (lee MicroSIP local)
-│   ├── .env               ← SERVER_URL=http://10.25.96.58:3001
-│   └── iniciar-agente.cmd ← Launcher para colegas
+│   ├── main.go            ← AGENTE (lee MicroSIP local)
+│   ├── agent.json         ← SERVER_URL=http://10.25.96.58:3001
+│   └── MicroSIP-Agent.exe ← Ejecutable para colegas
 │
 ├── dashboard/
 │   ├── src/Dashboard.tsx  ← DASHBOARD (React)
@@ -200,8 +200,8 @@ npm run build-all
 # Correr servidor (puerto 3001)
 npm --prefix server run start
 
-# Correr agente (lee local)
-npm --prefix agent run start
+# Correr agente (lee local). En las PCs de los colegas se usa MicroSIP-Agent.exe.
+# Ver reedmeGO.md
 
 # Dashboard se sirve automáticamente en http://localhost:3001
 ```
@@ -212,7 +212,7 @@ npm --prefix agent run start
 - **Limpieza**: Las llamadas nunca se borran (histórico completo)
 - **Performance**: Con 100,000 llamadas, aún rápido en SQLite
 - **Red**: Requiere puerto 3001 abierto en firewall
-- **Actualizar IP**: Si cambias IP, actualizar `.env` de todos los agentes
+- **Actualizar IP**: Si cambias IP, editar `agent.json` de todos los agentes y reiniciar el exe
 
 ---
 

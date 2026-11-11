@@ -4,7 +4,7 @@ Sistema centralizado para capturar llamadas de múltiples estaciones con MicroSI
 
 ## Componentes
 
-- Agent: recopila los registros locales de MicroSIP y los sincroniza al servidor.
+- Agent: programa en Go. En cada PC lee el registro local de MicroSIP y lo envia al servidor. El ejecutable para Windows 11 se explica en [reedmeGO.md](reedmeGO.md).
 - Server: expone API REST y eventos WebSocket para centralizar la información.
 - Dashboard: muestra KPIs, filtros y registros por agente, loja y sector.
 
@@ -27,6 +27,7 @@ Esto levanta el servidor, el agente y el dashboard local.
 
 ## Documentación
 
+- [reedmeGO.md](reedmeGO.md): compilar el agente y dejarlo como un exe para Windows 11.
 - [ARQUITECTURA.md](ARQUITECTURA.md): visión general de flujos, APIs y estructura.
 
 ## Notas
