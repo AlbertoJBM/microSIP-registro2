@@ -181,12 +181,14 @@ Retorna lista de agentes conectados.
 - `DELETE /api/route/days/:date/stores/:loja`: remove uma loja do roteiro.
 - `GET /api/route/visits?date=YYYY-MM-DD`: atendimentos e chamados do dia.
 - `POST /api/route/visits`: inicia um atendimento.
-- `PATCH /api/route/visits/:id`: salva observações e horários ou conclui e valida o atendimento.
-- `POST /api/route/visits/:id/validate`: valida um atendimento concluído após informar o atendente da central e o funcionário da loja.
+- `PATCH /api/route/visits/:id`: salva observações e horários, conclui diretamente (`FINALIZADO`) ou solicita validação (`VALIDAR`).
+- `POST /api/route/visits/:id/validate`: conclui um atendimento pendente após informar nome, função e data/hora da validação; observações são opcionais.
 - `POST /api/route/visits/:id/tickets`: adiciona um chamado individual.
 - `GET /api/route/dashboard`: indicadores, atividade mensal e auditoria recente.
 
 O planejamento estima distâncias entre centros urbanos locais e não substitui uma rota viária. Os nomes informados são registrados para auditoria; atualmente, a aplicação não autentica usuários.
+
+Atendimentos possuem os estados `ABERTO`, `VALIDAR` e `FINALIZADO`. A conclusão direta não exige dados de validação; solicitações de validação podem ser concluídas posteriormente.
 
 ## 💾 Archivos Importantes
 

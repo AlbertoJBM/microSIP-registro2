@@ -340,7 +340,11 @@ code {
 }
 
 .route-card.is-completed {
-  border-color: rgba(0, 204, 68, 0.48);
+  border-color: rgba(34, 197, 94, 0.48);
+}
+
+.route-card.is-pending-validation {
+  border-color: rgba(234, 179, 8, 0.5);
 }
 
 .route-card-order {
@@ -373,6 +377,30 @@ code {
   font-weight: 700;
 }
 
+.route-visit-state {
+  display: inline-flex;
+  margin: 4px 0 2px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.route-visit-state.is-aberto {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+}
+
+.route-visit-state.is-validar {
+  background: rgba(234, 179, 8, 0.18);
+  color: #fde047;
+}
+
+.route-visit-state.is-finalizado {
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+}
+
 .route-visit-button,
 .route-secondary-button,
 .route-ticket-form button {
@@ -401,6 +429,18 @@ code {
   padding: 9px 18px;
   background: #facc15;
   color: #422006;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.route-finish-button {
+  min-height: 40px;
+  border: 1px solid #15803d;
+  border-radius: 8px;
+  padding: 9px 18px;
+  background: #166534;
+  color: #f0fdf4;
   cursor: pointer;
   font-size: 13px;
   font-weight: 800;
@@ -496,6 +536,29 @@ code {
   padding: 10px 12px;
   color: #bbf7d0;
   font-size: 13px;
+}
+
+.route-validation-section {
+  margin-top: 18px;
+  border-top: 1px solid #334155;
+  padding-top: 16px;
+}
+
+.route-validation-section h3 {
+  margin-bottom: 12px;
+  color: #f1f5f9;
+  font-size: 15px;
+}
+
+.route-validation-fields textarea {
+  width: 100%;
+  min-height: 64px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #0c1726;
+  color: #e2e8f0;
+  resize: vertical;
 }
 
 .route-add-store-modal > p {

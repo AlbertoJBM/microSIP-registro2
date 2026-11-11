@@ -34,8 +34,11 @@ interface Visit {
   duration_minutes: number | null;
   visit_date: string;
   observations: string;
+  status: 'ABERTO' | 'VALIDAR' | 'FINALIZADO';
   validator_name: string | null;
+  validator_role: string | null;
   contact_name: string | null;
+  validation_observations: string | null;
   validated_at: string | null;
   tickets: Ticket[];
 }
@@ -193,7 +196,9 @@ export const RouteDaily: React.FC<RouteDailyProps> = ({ mode, serverUrl }) => {
   const [departureTime, setDepartureTime] = useState('');
   const [observations, setObservations] = useState('');
   const [validatorName, setValidatorName] = useState('');
-  const [contactName, setContactName] = useState('');
+  const [validatorRole, setValidatorRole] = useState('');
+  const [validationObservations, setValidationObservations] = useState('');
+  const [validationTime, setValidationTime] = useState(currentDateTimeInput());
   const [ticketNumber, setTicketNumber] = useState('');
   const [ticketDescription, setTicketDescription] = useState('');
   const [dashboard, setDashboard] = useState<RouteDashboardData | null>(null);
@@ -388,8 +393,10 @@ export const RouteDaily: React.FC<RouteDailyProps> = ({ mode, serverUrl }) => {
       setArrivalTime(localDateTimeInput(visitWithTickets.start_time));
       setDepartureTime(localDateTimeInput(visitWithTickets.end_time));
       setObservations(visitWithTickets.observations || '');
-      setValidatorName('');
-      setContactName('');
+      setValidatorName(visitWithTickets.validator_name || '');
+      setValidatorRole(visitWithTickets.validator_role || '');
+      setValidationObservations(visitWithTickets.validation_observations || '');
+      setValidationTime(localDateTimeInput(visitWithTickets.validated_at) || currentDateTimeInput());
       setTicketNumber('');
       setTicketDescription('');
     } catch (openError) {
@@ -400,39 +407,44 @@ export const RouteDaily: React.FC<RouteDailyProps> = ({ mode, serverUrl }) => {
     }
   };
 
-  const saveVisit = async (complete: boolean) => {
-    if (!activeVisit || ((!complete || !activeVisit.end_time) && !technician.trim())) {
+  const saveVisit = async (action: 'SAVE' | 'VALIDAR' | 'FINALIZADO' | 'VALIDATE') => {
+    if (!activeVisit || (action !== 'VALIDATE' && !technician.trim())) {
       setError('Informe o responsável pela rota antes de salvar.');
       return;
     }
-    if (complete && (!validatorName.trim() || !contactName.trim())) {
-      setError('Informe quem validou na central e o funcionário da loja.');
+    if (action === 'VALIDATE' && (!validatorName.trim() || !validatorRole.trim() || !validationTime)) {
+      setError('Informe o nome, a função e a data e hora da validação.');
       return;
     }
     setSaving(true);
     setError('');
     try {
-      if (complete && activeVisit.end_time) {
+      if (action === 'VALIDATE') {
         await apiRequest(`/api/route/visits/${activeVisit.id}/validate`, {
           method: 'POST',
-          body: JSON.stringify({ validator_name: validatorName.trim(), contact_name: contactName.trim() })
+          body: JSON.stringify({
+            validator_name: validatorName.trim(),
+            validator_role: validatorRole.trim(),
+            validation_observations: validationObservations.trim(),
+            validated_at: validationTime
+          })
         });
       } else {
+        const completes = action === 'VALIDAR' || action === 'FINALIZADO';
         await apiRequest(`/api/route/visits/${activeVisit.id}`, {
           method: 'PATCH',
           body: JSON.stringify({
             username: technician.trim(),
             start_time: arrivalTime,
-            end_time: complete ? departureTime || currentDateTimeInput() : departureTime,
+            end_time: completes ? departureTime || currentDateTimeInput() : departureTime,
             observations,
-            validator_name: validatorName.trim(),
-            contact_name: contactName.trim(),
-            complete
+            status: completes ? action : undefined,
+            complete: completes
           })
         });
       }
       await refreshVisits(selectedDate);
-      if (complete) setActiveVisit(null);
+      if (action !== 'SAVE') setActiveVisit(null);
       else setActiveVisit((current) => current ? { ...current, observations } : current);
     } catch (saveError) {
       setError(errorMessage(saveError));
@@ -600,27 +612,28 @@ export const RouteDaily: React.FC<RouteDailyProps> = ({ mode, serverUrl }) => {
             <div className="route-stops">
               {selectedRoute.ordered.map((store, index) => {
                 const visit = visitByStore.get(store.loja);
-                const completed = Boolean(visit?.end_time);
-                const validated = Boolean(visit?.validated_at);
+                const status = visit?.status || (visit?.end_time ? 'FINALIZADO' : 'ABERTO');
+                const pendingValidation = status === 'VALIDAR';
+                const finalized = status === 'FINALIZADO';
                 return (
-                  <article className={`route-card ${validated ? 'is-completed' : ''}`} key={store.loja}>
+                  <article className={`route-card ${finalized ? 'is-completed' : ''} ${pendingValidation ? 'is-pending-validation' : ''}`} key={store.loja}>
                     <div className="route-card-order">{index + 1}</div>
                     <div className="route-card-content">
                       <strong>Loja {store.loja}</strong>
                       <span>{store.cidade} - {store.uf}</span>
                       <small>{store.bairro} · {store.tipo}</small>
-                      <span className="route-status">Status: {validated ? 'Validado' : completed ? 'Concluído, aguardando validação' : visit ? 'Em andamento' : 'Pendente'}</span>
+                      <span className="route-status">{status}</span>
                       {visit && <small>{visit.tickets.length} chamado(s) · {visit.duration_minutes ?? '—'} min</small>}
                     </div>
                     <button
-                      className={completed && !validated
+                      className={pendingValidation
                         ? 'route-validate-button'
-                        : `route-visit-button ${validated ? 'is-completed' : ''}`}
+                        : `route-visit-button ${finalized ? 'is-completed' : ''}`}
                       type="button"
-                      disabled={saving || validated}
+                      disabled={saving || finalized}
                       onClick={() => void openVisit(store)}
                     >
-                      {validated ? 'Validado' : completed ? 'Validar' : visit ? 'Continuar' : 'Iniciar'}
+                      {pendingValidation ? 'Validar' : finalized ? 'Finalizado' : visit ? 'Continuar' : 'Aberto'}
                     </button>
                   </article>
                 );
@@ -641,6 +654,7 @@ export const RouteDaily: React.FC<RouteDailyProps> = ({ mode, serverUrl }) => {
                 <div><p className="route-eyebrow">Registro de atendimento</p><h2 id="route-modal-title">Loja {activeVisit.loja} · {activeVisit.cidade}</h2></div>
                 <button type="button" className="route-close" aria-label="Fechar" onClick={() => setActiveVisit(null)}>×</button>
               </div>
+              <p className={`route-visit-state is-${activeVisit.status.toLowerCase()}`}>{activeVisit.status}</p>
               <div className="route-modal-fields">
                 <label>Data e hora de chegada<input type="datetime-local" value={arrivalTime} disabled={Boolean(activeVisit.end_time)} onChange={(event) => setArrivalTime(event.target.value)} /></label>
                 <label>Data e hora de saída<input type="datetime-local" value={departureTime} disabled={Boolean(activeVisit.end_time)} onChange={(event) => setDepartureTime(event.target.value)} /></label>
@@ -660,31 +674,42 @@ export const RouteDaily: React.FC<RouteDailyProps> = ({ mode, serverUrl }) => {
                   </form>
                 )}
               </div>
-              {activeVisit.validated_at ? (
-                <p className="route-validation-info">
-                  Validado por {activeVisit.validator_name} com {activeVisit.contact_name} em {activeVisit.validated_at}.
-                </p>
-              ) : (
-                <div className="route-validation-fields">
-                  <label>Quem validou na central
-                    <input value={validatorName} onChange={(event) => setValidatorName(event.target.value)} placeholder="Nome do atendente" required />
-                  </label>
-                  <label>Funcionário na loja
-                    <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Nome de quem confirmou o atendimento" required />
-                  </label>
+              {activeVisit.status === 'VALIDAR' ? (
+                <div className="route-validation-section">
+                  <h3>Dados da validação</h3>
+                  <div className="route-validation-fields">
+                    <label>Nome de quem validou
+                      <input value={validatorName} onChange={(event) => setValidatorName(event.target.value)} placeholder="Nome do atendente ou funcionário" required />
+                    </label>
+                    <label>Cargo ou função
+                      <input value={validatorRole} onChange={(event) => setValidatorRole(event.target.value)} placeholder="Ex.: gerente da loja" required />
+                    </label>
+                    <label>Data e hora da validação
+                      <input type="datetime-local" value={validationTime} onChange={(event) => setValidationTime(event.target.value)} required />
+                    </label>
+                    <label>Observações (opcional)
+                      <textarea rows={2} value={validationObservations} onChange={(event) => setValidationObservations(event.target.value)} />
+                    </label>
+                  </div>
                 </div>
-              )}
+              ) : activeVisit.validated_at ? (
+                <p className="route-validation-info">
+                  Validado por {activeVisit.validator_name} ({activeVisit.validator_role}) em {activeVisit.validated_at}.
+                  {activeVisit.validation_observations && <><br />Observações: {activeVisit.validation_observations}</>}
+                </p>
+              ) : null}
               {error && <div className="route-error" role="alert">{error}</div>}
               <div className="route-modal-actions">
-                {!activeVisit.end_time && <button type="button" className="route-secondary-button" disabled={saving} onClick={() => void saveVisit(false)}>Salvar alterações</button>}
-                <button
-                  type="button"
-                  className={`route-validate-button ${activeVisit.validated_at ? 'is-validated' : ''}`}
-                  disabled={saving || Boolean(activeVisit.validated_at)}
-                  onClick={() => void saveVisit(true)}
-                >
-                  {activeVisit.validated_at ? 'Validado' : 'Validar'}
-                </button>
+                {activeVisit.status === 'ABERTO' && (
+                  <>
+                    <button type="button" className="route-secondary-button" disabled={saving} onClick={() => void saveVisit('SAVE')}>Salvar alterações</button>
+                    <button type="button" className="route-finish-button" disabled={saving} onClick={() => void saveVisit('FINALIZADO')}>Finalizar</button>
+                    <button type="button" className="route-validate-button" disabled={saving} onClick={() => void saveVisit('VALIDAR')}>Validar</button>
+                  </>
+                )}
+                {activeVisit.status === 'VALIDAR' && (
+                  <button type="button" className="route-validate-button" disabled={saving} onClick={() => void saveVisit('VALIDATE')}>Confirmar validação</button>
+                )}
               </div>
             </section>
           </div>

@@ -150,7 +150,10 @@ async function initDatabase() {
       observations TEXT DEFAULT '',
       validator_name TEXT,
       contact_name TEXT,
-      validated_at DATETIME
+      validated_at DATETIME,
+      status TEXT NOT NULL DEFAULT 'ABERTO',
+      validator_role TEXT,
+      validation_observations TEXT
     );
 
     CREATE TABLE IF NOT EXISTS route_days (
@@ -195,6 +198,13 @@ async function initDatabase() {
   if (!routeVisitColumns.has('validator_name')) db.run('ALTER TABLE route_visits ADD COLUMN validator_name TEXT');
   if (!routeVisitColumns.has('contact_name')) db.run('ALTER TABLE route_visits ADD COLUMN contact_name TEXT');
   if (!routeVisitColumns.has('validated_at')) db.run('ALTER TABLE route_visits ADD COLUMN validated_at DATETIME');
+  if (!routeVisitColumns.has('status')) db.run("ALTER TABLE route_visits ADD COLUMN status TEXT NOT NULL DEFAULT 'ABERTO'");
+  if (!routeVisitColumns.has('validator_role')) db.run('ALTER TABLE route_visits ADD COLUMN validator_role TEXT');
+  if (!routeVisitColumns.has('validation_observations')) db.run('ALTER TABLE route_visits ADD COLUMN validation_observations TEXT');
+  db.run(
+    `UPDATE route_visits SET status = 'FINALIZADO'
+     WHERE status = 'ABERTO' AND end_time IS NOT NULL`
+  );
 
   try {
     db.run(`ALTER TABLE call_logs ADD COLUMN category TEXT;`);
@@ -543,7 +553,7 @@ app.patch('/api/route/visits/:id', (req, res) => {
     if (!Number.isSafeInteger(visitId) || visitId <= 0) return res.status(400).json({ error: 'Atendimento inválido' });
     const visit = getRouteVisit(visitId);
     if (!visit) return res.status(404).json({ error: 'Atendimento não encontrado' });
-    if (visit.end_time) return res.status(409).json({ error: 'Este atendimento já foi concluído' });
+    if (visit.status !== 'ABERTO') return res.status(409).json({ error: 'Este atendimento já foi concluído ou aguarda validação' });
 
     const username = String(req.body?.username || '').trim();
     const startTime = normalizeDateTime(req.body?.start_time);
@@ -551,12 +561,12 @@ app.patch('/api/route/visits/:id', (req, res) => {
     if (!username) return res.status(400).json({ error: 'O nome do responsável é obrigatório' });
     if (!startTime) return res.status(400).json({ error: 'Horário de chegada inválido' });
 
-    if (req.body?.complete === true) {
-      const validatorName = String(req.body?.validator_name || '').trim();
-      const contactName = String(req.body?.contact_name || '').trim();
-      if (!validatorName || !contactName) {
-        return res.status(400).json({ error: 'Informe quem validou na central e o funcionário da loja' });
-      }
+    const requestedStatus = req.body?.status
+      || (req.body?.complete === true ? 'FINALIZADO' : null);
+    if (requestedStatus && requestedStatus !== 'VALIDAR' && requestedStatus !== 'FINALIZADO') {
+      return res.status(400).json({ error: 'Status de conclusão inválido' });
+    }
+    if (requestedStatus === 'VALIDAR' || requestedStatus === 'FINALIZADO') {
       const endTime = normalizeDateTime(req.body?.end_time);
       if (!endTime || Date.parse(endTime.replace(' ', 'T')) < Date.parse(startTime.replace(' ', 'T'))) {
         return res.status(400).json({ error: 'Horário de saída inválido' });
@@ -564,11 +574,17 @@ app.patch('/api/route/visits/:id', (req, res) => {
       db.run(
         `UPDATE route_visits
          SET start_time = ?, end_time = ?, duration_minutes = MAX(0, ROUND((julianday(?) - julianday(?)) * 1440)),
-             observations = ?, validator_name = ?, contact_name = ?, validated_at = datetime('now', 'localtime')
+             observations = ?, status = ?, validator_name = NULL, contact_name = NULL,
+             validator_role = NULL, validation_observations = NULL, validated_at = NULL
          WHERE id = ?`,
-        [startTime, endTime, endTime, startTime, observations, validatorName, contactName, visitId]
+        [startTime, endTime, endTime, startTime, observations, requestedStatus, visitId]
       );
-      recordRouteAudit(validatorName, String(visit.loja), `Atendimento validado com ${contactName}`, visitId);
+      recordRouteAudit(
+        username,
+        String(visit.loja),
+        requestedStatus === 'VALIDAR' ? 'Atendimento aguardando validação' : 'Atendimento finalizado',
+        visitId
+      );
     } else {
       db.run(
         'UPDATE route_visits SET start_time = ?, observations = ? WHERE id = ?',
@@ -591,21 +607,26 @@ app.post('/api/route/visits/:id/validate', (req, res) => {
     if (!Number.isSafeInteger(visitId) || visitId <= 0) return res.status(400).json({ error: 'Atendimento inválido' });
     const visit = getRouteVisit(visitId);
     if (!visit) return res.status(404).json({ error: 'Atendimento não encontrado' });
-    if (!visit.end_time) return res.status(409).json({ error: 'Conclua o atendimento antes de validá-lo' });
-    if (visit.validated_at) return res.status(409).json({ error: 'Este atendimento já foi validado' });
+    if (visit.status !== 'VALIDAR') return res.status(409).json({ error: 'Este atendimento não está aguardando validação' });
 
     const validatorName = String(req.body?.validator_name || '').trim();
-    const contactName = String(req.body?.contact_name || '').trim();
-    if (!validatorName || !contactName) {
-      return res.status(400).json({ error: 'Informe quem validou na central e o funcionário da loja' });
+    const validatorRole = String(req.body?.validator_role || '').trim();
+    const validationObservations = String(req.body?.validation_observations || '').trim();
+    const validatedAt = normalizeDateTime(req.body?.validated_at);
+    if (!validatorName || !validatorRole || !validatedAt) {
+      return res.status(400).json({ error: 'Informe o nome, a função e a data e hora da validação' });
+    }
+    if (Date.parse(validatedAt.replace(' ', 'T')) < Date.parse(String(visit.end_time).replace(' ', 'T'))) {
+      return res.status(400).json({ error: 'A data e hora da validação não podem ser anteriores ao encerramento' });
     }
     db.run(
       `UPDATE route_visits
-       SET validator_name = ?, contact_name = ?, validated_at = datetime('now', 'localtime')
+       SET validator_name = ?, validator_role = ?, validation_observations = ?,
+           validated_at = ?, status = 'FINALIZADO'
        WHERE id = ?`,
-      [validatorName, contactName, visitId]
+      [validatorName, validatorRole, validationObservations, validatedAt, visitId]
     );
-    recordRouteAudit(validatorName, String(visit.loja), `Atendimento validado com ${contactName}`, visitId);
+    recordRouteAudit(validatorName, String(visit.loja), `Atendimento validado (${validatorRole})`, visitId);
     saveDatabase();
     res.json(getRouteVisit(visitId));
   } catch (error) {
