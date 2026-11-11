@@ -7,6 +7,7 @@ Sistema centralizado para capturar llamadas de múltiples estaciones con MicroSI
 - Agent: programa en Go. En cada PC lee el registro local de MicroSIP y lo envia al servidor. El ejecutable para Windows 11 se explica en [reedmeGO.md](reedmeGO.md).
 - Server: expone API REST y eventos WebSocket para centralizar la información.
 - Dashboard: muestra KPIs, filtros y registros por agente, loja y sector.
+- Rota diária: permite escolher o dia no calendário, selecionar lojas, salvar a rota e registrar atendimentos, chamados e auditoria.
 
 ## Estructura relevante
 
@@ -34,4 +35,5 @@ Esto levanta el servidor, el agente y el dashboard local.
 
 - El dashboard está pensado para uso local/red local, con Puerto 3001.
 - El servidor mantiene un histórico central en SQLite.
+- A rota diária usa `server/data/store-locations.json` e salva os dados em `central_logs.db`. O roteiro do dia pode ser salvo; lojas incluídas depois exigem o nome de quem as adicionou e registram data e horário. Os atendimentos só são validados após informar o atendente da central e o funcionário da loja. O ordenamento e as distâncias são estimados com base nos centros urbanos, não representam uma rota viária e não consideram o trânsito. O nome do responsável é informado no painel porque a aplicação ainda não possui autenticação.
 - Los artefactos compilados y los scripts de mantenimiento antiguos se mantienen fuera del flujo principal para evitar ruido y duplicados.

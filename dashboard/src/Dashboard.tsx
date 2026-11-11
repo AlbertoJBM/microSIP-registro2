@@ -13,6 +13,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import styled from 'styled-components';
+import { RouteDaily } from './RouteDaily';
 
 interface AgentStats {
   agent_username: string;
@@ -594,7 +595,7 @@ export const Dashboard: React.FC = () => {
   const [hourlyView, setHourlyView] = useState<HourlyView>('general');
   const [hourlyOrder, setHourlyOrder] = useState<'natural' | 'desc' | 'asc'>('natural');
   const [agentOrder, setAgentOrder] = useState<'natural' | 'desc' | 'asc'>('natural');
-  const [activeTab, setActiveTab] = useState<'overview' | 'calls' | 'tops'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'calls' | 'tops' | 'route' | 'history'>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const filterParamsRef = useRef(new URLSearchParams());
 
@@ -1080,6 +1081,30 @@ export const Dashboard: React.FC = () => {
           >
             <IconeNavegacao src="/img/icone/lista.png" alt="" /> Registros
           </Button>
+          <Button
+            onClick={() => {
+              setActiveTab('route');
+              setIsSidebarOpen(false);
+            }}
+            style={{
+              background: activeTab === 'route' ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+              color: 'white'
+            }}
+          >
+            Rota diária
+          </Button>
+          <Button
+            onClick={() => {
+              setActiveTab('history');
+              setIsSidebarOpen(false);
+            }}
+            style={{
+              background: activeTab === 'history' ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+              color: 'white'
+            }}
+          >
+            Histórico de atendimentos
+          </Button>
         </SidebarSection>
       </Sidebar>
 
@@ -1114,6 +1139,9 @@ export const Dashboard: React.FC = () => {
             </AgentStrip>
           </div>
         </Header>
+
+        {activeTab === 'route' && <RouteDaily mode="route" serverUrl={SERVER_URL} />}
+        {activeTab === 'history' && <RouteDaily mode="history" serverUrl={SERVER_URL} />}
 
         {activeTab === 'overview' && (
           <>

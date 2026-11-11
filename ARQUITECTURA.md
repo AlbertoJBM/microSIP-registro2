@@ -82,6 +82,9 @@ duration, info, synced_at
 ```
 Almacena **todas las llamadas** de todos los agentes.
 
+### Tabelas da rota: `route_days`, `route_day_stores`, `route_visits`, `route_tickets`, `route_audit`
+Armazenam o roteiro salvo por dia e suas lojas, os atendimentos e chamados, os dados de validação (atendente da central, funcionário da loja e horário) e o histórico de alterações.
+
 ## 🔐 Clasificaciones
 
 ### Tipos de Llamada
@@ -169,6 +172,21 @@ Retorna opciones disponibles para filtrar (usuarios, lojas, sectores).
 
 ### GET `/api/agents`
 Retorna lista de agentes conectados.
+
+### APIs de Ruta Diaria
+- `GET /api/route/stores`: catálogo de lojas de `server/data/store-locations.json`.
+- `GET /api/route/days/:date`: roteiro salvo e lojas do dia.
+- `POST /api/route/days/:date`: salva o roteiro inicial do dia.
+- `POST /api/route/days/:date/stores`: adiciona uma loja ao roteiro salvo, registrando quem adicionou e o horário.
+- `DELETE /api/route/days/:date/stores/:loja`: remove uma loja do roteiro.
+- `GET /api/route/visits?date=YYYY-MM-DD`: atendimentos e chamados do dia.
+- `POST /api/route/visits`: inicia um atendimento.
+- `PATCH /api/route/visits/:id`: salva observações e horários ou conclui e valida o atendimento.
+- `POST /api/route/visits/:id/validate`: valida um atendimento concluído após informar o atendente da central e o funcionário da loja.
+- `POST /api/route/visits/:id/tickets`: adiciona um chamado individual.
+- `GET /api/route/dashboard`: indicadores, atividade mensal e auditoria recente.
+
+O planejamento estima distâncias entre centros urbanos locais e não substitui uma rota viária. Os nomes informados são registrados para auditoria; atualmente, a aplicação não autentica usuários.
 
 ## 💾 Archivos Importantes
 

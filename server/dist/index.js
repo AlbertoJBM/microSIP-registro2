@@ -171,7 +171,66 @@ async function initDatabase() {
       synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(agent_username, original_id)
     );
+
+    CREATE TABLE IF NOT EXISTS route_visits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      loja TEXT NOT NULL,
+      cidade TEXT NOT NULL,
+      bairro TEXT NOT NULL,
+      start_time DATETIME NOT NULL,
+      end_time DATETIME,
+      duration_minutes INTEGER,
+      visit_date DATE NOT NULL,
+      observations TEXT DEFAULT '',
+      validator_name TEXT,
+      contact_name TEXT,
+      validated_at DATETIME
+    );
+
+    CREATE TABLE IF NOT EXISTS route_days (
+      visit_date DATE PRIMARY KEY,
+      saved_by TEXT NOT NULL,
+      saved_at DATETIME NOT NULL DEFAULT (datetime('now', 'localtime'))
+    );
+
+    CREATE TABLE IF NOT EXISTS route_day_stores (
+      visit_date DATE NOT NULL,
+      loja TEXT NOT NULL,
+      added_by TEXT,
+      added_at DATETIME,
+      PRIMARY KEY (visit_date, loja),
+      FOREIGN KEY (visit_date) REFERENCES route_days(visit_date)
+    );
+
+    CREATE TABLE IF NOT EXISTS route_tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      visit_id INTEGER NOT NULL,
+      ticket_number TEXT NOT NULL,
+      description TEXT NOT NULL,
+      FOREIGN KEY (visit_id) REFERENCES route_visits(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS route_audit (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      created_at DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+      username TEXT NOT NULL,
+      loja TEXT NOT NULL,
+      action TEXT NOT NULL,
+      visit_id INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_visits_date ON route_visits(visit_date);
+    CREATE INDEX IF NOT EXISTS idx_route_day_stores_date ON route_day_stores(visit_date);
+    CREATE INDEX IF NOT EXISTS idx_route_tickets_visit ON route_tickets(visit_id);
+    CREATE INDEX IF NOT EXISTS idx_route_audit_created ON route_audit(created_at);
   `);
+    const routeVisitColumns = new Set(queryRows('PRAGMA table_info(route_visits)').map((column) => String(column.name)));
+    if (!routeVisitColumns.has('validator_name'))
+        db.run('ALTER TABLE route_visits ADD COLUMN validator_name TEXT');
+    if (!routeVisitColumns.has('contact_name'))
+        db.run('ALTER TABLE route_visits ADD COLUMN contact_name TEXT');
+    if (!routeVisitColumns.has('validated_at'))
+        db.run('ALTER TABLE route_visits ADD COLUMN validated_at DATETIME');
     try {
         db.run(`ALTER TABLE call_logs ADD COLUMN category TEXT;`);
     }
@@ -230,6 +289,39 @@ function saveDatabase() {
 function sqlValue(value) {
     return `'${String(value).replace(/'/g, "''")}'`;
 }
+function queryRows(sql, values = []) {
+    const statement = db.prepare(sql);
+    if (values.length > 0)
+        statement.bind(values);
+    const rows = [];
+    while (statement.step())
+        rows.push(statement.getAsObject());
+    statement.free();
+    return rows;
+}
+function isValidDate(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+        return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+function normalizeDateTime(value) {
+    if (typeof value !== 'string')
+        return null;
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!match || !isValidDate(match[1]))
+        return null;
+    const [, date, hour, minute, second = '00'] = match;
+    if (Number(hour) > 23 || Number(minute) > 59 || Number(second) > 59)
+        return null;
+    return `${date} ${hour}:${minute}:${second}`;
+}
+function recordRouteAudit(username, loja, action, visitId = null) {
+    db.run('INSERT INTO route_audit (username, loja, action, visit_id) VALUES (?, ?, ?, ?)', [username, loja, action, visitId]);
+}
+function getRouteVisit(visitId) {
+    return queryRows('SELECT * FROM route_visits WHERE id = ?', [visitId])[0] || null;
+}
 function buildCallsFilter(queryParams) {
     const { startDate, endDate, loja, sector } = queryParams;
     const rawUsers = queryParams.user ?? queryParams.users;
@@ -284,6 +376,333 @@ app.use(express_1.default.static(publicStaticPath));
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get('/api/route/stores', (_req, res) => {
+    const stores = Object.values(storeLocations)
+        .sort((a, b) => Number(a.loja) - Number(b.loja));
+    res.json(stores);
+});
+app.get('/api/route/days/:date', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitDate = req.params.date;
+        if (!isValidDate(visitDate))
+            return res.status(400).json({ error: 'Data inválida' });
+        const day = queryRows('SELECT visit_date, saved_by, saved_at FROM route_days WHERE visit_date = ?', [visitDate])[0];
+        const stores = queryRows('SELECT loja, added_by, added_at FROM route_day_stores WHERE visit_date = ? ORDER BY rowid', [visitDate]);
+        res.json({
+            date: visitDate,
+            saved: Boolean(day),
+            saved_by: day?.saved_by || null,
+            saved_at: day?.saved_at || null,
+            stores
+        });
+    }
+    catch (error) {
+        console.error('Failed to get daily route:', error);
+        res.status(500).json({ error: 'Não foi possível carregar a rota do dia' });
+    }
+});
+app.post('/api/route/days/:date', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitDate = req.params.date;
+        const username = String(req.body?.username || '').trim();
+        const stores = Array.isArray(req.body?.stores)
+            ? Array.from(new Set(req.body.stores.map((loja) => String(loja).trim()).filter((loja) => Boolean(loja))))
+            : null;
+        if (!isValidDate(visitDate))
+            return res.status(400).json({ error: 'Data inválida' });
+        if (!username)
+            return res.status(400).json({ error: 'Informe quem está salvando a rota' });
+        if (!stores)
+            return res.status(400).json({ error: 'A lista de lojas da rota é inválida' });
+        if (stores.some((loja) => !storeLocations[loja])) {
+            return res.status(400).json({ error: 'A rota contém uma loja não encontrada' });
+        }
+        if (queryRows('SELECT visit_date FROM route_days WHERE visit_date = ?', [visitDate]).length > 0) {
+            return res.status(409).json({ error: 'A rota deste dia já foi salva' });
+        }
+        db.run('BEGIN TRANSACTION');
+        try {
+            db.run('INSERT INTO route_days (visit_date, saved_by) VALUES (?, ?)', [visitDate, username]);
+            for (const loja of stores) {
+                db.run('INSERT INTO route_day_stores (visit_date, loja) VALUES (?, ?)', [visitDate, loja]);
+            }
+            recordRouteAudit(username, 'Rota diária', `Rota de ${visitDate} salva`);
+            db.run('COMMIT');
+        }
+        catch (error) {
+            db.run('ROLLBACK');
+            throw error;
+        }
+        saveDatabase();
+        res.status(201).json({ date: visitDate, saved: true, saved_by: username, stores });
+    }
+    catch (error) {
+        console.error('Failed to save daily route:', error);
+        res.status(500).json({ error: 'Não foi possível salvar a rota do dia' });
+    }
+});
+app.post('/api/route/days/:date/stores', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitDate = req.params.date;
+        const loja = String(req.body?.loja || '').trim();
+        const username = String(req.body?.username || '').trim();
+        if (!isValidDate(visitDate))
+            return res.status(400).json({ error: 'Data inválida' });
+        if (!username)
+            return res.status(400).json({ error: 'Informe quem está adicionando a loja' });
+        if (!storeLocations[loja])
+            return res.status(400).json({ error: 'Loja não encontrada' });
+        if (queryRows('SELECT visit_date FROM route_days WHERE visit_date = ?', [visitDate]).length === 0) {
+            return res.status(409).json({ error: 'Salve a rota do dia antes de adicionar outra loja' });
+        }
+        if (queryRows('SELECT loja FROM route_day_stores WHERE visit_date = ? AND loja = ?', [visitDate, loja]).length > 0) {
+            return res.status(409).json({ error: 'Esta loja já está na rota do dia' });
+        }
+        db.run(`INSERT INTO route_day_stores (visit_date, loja, added_by, added_at)
+       VALUES (?, ?, ?, datetime('now', 'localtime'))`, [visitDate, loja, username]);
+        const added = queryRows('SELECT loja, added_by, added_at FROM route_day_stores WHERE visit_date = ? AND loja = ?', [visitDate, loja])[0];
+        recordRouteAudit(username, loja, `Loja adicionada à rota de ${visitDate}`);
+        saveDatabase();
+        res.status(201).json(added);
+    }
+    catch (error) {
+        console.error('Failed to add store to daily route:', error);
+        res.status(500).json({ error: 'Não foi possível adicionar a loja à rota' });
+    }
+});
+app.delete('/api/route/days/:date/stores/:loja', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitDate = req.params.date;
+        const loja = String(req.params.loja || '').trim();
+        const username = String(req.body?.username || '').trim();
+        if (!isValidDate(visitDate))
+            return res.status(400).json({ error: 'Data inválida' });
+        if (!username)
+            return res.status(400).json({ error: 'Informe quem está alterando a rota' });
+        const exists = queryRows('SELECT loja FROM route_day_stores WHERE visit_date = ? AND loja = ?', [visitDate, loja]).length > 0;
+        if (!exists)
+            return res.status(404).json({ error: 'Loja não encontrada na rota do dia' });
+        db.run('DELETE FROM route_day_stores WHERE visit_date = ? AND loja = ?', [visitDate, loja]);
+        recordRouteAudit(username, loja, `Loja removida da rota de ${visitDate}`);
+        saveDatabase();
+        res.status(204).end();
+    }
+    catch (error) {
+        console.error('Failed to remove store from daily route:', error);
+        res.status(500).json({ error: 'Não foi possível remover a loja da rota' });
+    }
+});
+app.get('/api/route/visits', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const date = req.query.date;
+        if (!isValidDate(date))
+            return res.status(400).json({ error: 'Data inválida' });
+        const visits = queryRows('SELECT * FROM route_visits WHERE visit_date = ? ORDER BY start_time, id', [date]);
+        const tickets = queryRows(`SELECT t.id, t.visit_id, t.ticket_number, t.description
+       FROM route_tickets t JOIN route_visits v ON v.id = t.visit_id
+       WHERE v.visit_date = ? ORDER BY t.id`, [date]);
+        const ticketsByVisit = new Map();
+        for (const ticket of tickets) {
+            const visitId = Number(ticket.visit_id);
+            ticketsByVisit.set(visitId, [...(ticketsByVisit.get(visitId) || []), ticket]);
+        }
+        res.json(visits.map((visit) => ({
+            ...visit,
+            tickets: ticketsByVisit.get(Number(visit.id)) || []
+        })));
+    }
+    catch (error) {
+        console.error('Failed to get route visits:', error);
+        res.status(500).json({ error: 'Não foi possível carregar os atendimentos' });
+    }
+});
+app.post('/api/route/visits', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const loja = String(req.body?.loja || '').trim();
+        const username = String(req.body?.username || '').trim();
+        const visitDate = req.body?.visit_date;
+        const store = storeLocations[loja];
+        if (!store)
+            return res.status(400).json({ error: 'Loja não encontrada' });
+        if (!username)
+            return res.status(400).json({ error: 'O nome do responsável é obrigatório' });
+        if (!isValidDate(visitDate))
+            return res.status(400).json({ error: 'Data inválida' });
+        const openVisit = queryRows('SELECT id FROM route_visits WHERE loja = ? AND visit_date = ? AND end_time IS NULL LIMIT 1', [loja, visitDate])[0];
+        if (openVisit)
+            return res.status(409).json({ error: 'Já existe um atendimento em andamento para esta loja' });
+        db.run(`INSERT INTO route_visits (loja, cidade, bairro, start_time, visit_date)
+       VALUES (?, ?, ?, datetime('now', 'localtime'), ?)`, [loja, store.cidade, store.bairro, visitDate]);
+        const visitId = Number(queryRows('SELECT last_insert_rowid() AS id')[0].id);
+        recordRouteAudit(username, loja, 'Início do atendimento', visitId);
+        saveDatabase();
+        res.status(201).json(getRouteVisit(visitId));
+    }
+    catch (error) {
+        console.error('Failed to start route visit:', error);
+        res.status(500).json({ error: 'Não foi possível iniciar o atendimento' });
+    }
+});
+app.patch('/api/route/visits/:id', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitId = Number(req.params.id);
+        if (!Number.isSafeInteger(visitId) || visitId <= 0)
+            return res.status(400).json({ error: 'Atendimento inválido' });
+        const visit = getRouteVisit(visitId);
+        if (!visit)
+            return res.status(404).json({ error: 'Atendimento não encontrado' });
+        if (visit.end_time)
+            return res.status(409).json({ error: 'Este atendimento já foi concluído' });
+        const username = String(req.body?.username || '').trim();
+        const startTime = normalizeDateTime(req.body?.start_time);
+        const observations = String(req.body?.observations ?? '').trim();
+        if (!username)
+            return res.status(400).json({ error: 'O nome do responsável é obrigatório' });
+        if (!startTime)
+            return res.status(400).json({ error: 'Horário de chegada inválido' });
+        if (req.body?.complete === true) {
+            const validatorName = String(req.body?.validator_name || '').trim();
+            const contactName = String(req.body?.contact_name || '').trim();
+            if (!validatorName || !contactName) {
+                return res.status(400).json({ error: 'Informe quem validou na central e o funcionário da loja' });
+            }
+            const endTime = normalizeDateTime(req.body?.end_time);
+            if (!endTime || Date.parse(endTime.replace(' ', 'T')) < Date.parse(startTime.replace(' ', 'T'))) {
+                return res.status(400).json({ error: 'Horário de saída inválido' });
+            }
+            db.run(`UPDATE route_visits
+         SET start_time = ?, end_time = ?, duration_minutes = MAX(0, ROUND((julianday(?) - julianday(?)) * 1440)),
+             observations = ?, validator_name = ?, contact_name = ?, validated_at = datetime('now', 'localtime')
+         WHERE id = ?`, [startTime, endTime, endTime, startTime, observations, validatorName, contactName, visitId]);
+            recordRouteAudit(validatorName, String(visit.loja), `Atendimento validado com ${contactName}`, visitId);
+        }
+        else {
+            db.run('UPDATE route_visits SET start_time = ?, observations = ? WHERE id = ?', [startTime, observations, visitId]);
+            recordRouteAudit(username, String(visit.loja), 'Atualização do atendimento', visitId);
+        }
+        saveDatabase();
+        res.json(getRouteVisit(visitId));
+    }
+    catch (error) {
+        console.error('Failed to update route visit:', error);
+        res.status(500).json({ error: 'Não foi possível atualizar o atendimento' });
+    }
+});
+app.post('/api/route/visits/:id/validate', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitId = Number(req.params.id);
+        if (!Number.isSafeInteger(visitId) || visitId <= 0)
+            return res.status(400).json({ error: 'Atendimento inválido' });
+        const visit = getRouteVisit(visitId);
+        if (!visit)
+            return res.status(404).json({ error: 'Atendimento não encontrado' });
+        if (!visit.end_time)
+            return res.status(409).json({ error: 'Conclua o atendimento antes de validá-lo' });
+        if (visit.validated_at)
+            return res.status(409).json({ error: 'Este atendimento já foi validado' });
+        const validatorName = String(req.body?.validator_name || '').trim();
+        const contactName = String(req.body?.contact_name || '').trim();
+        if (!validatorName || !contactName) {
+            return res.status(400).json({ error: 'Informe quem validou na central e o funcionário da loja' });
+        }
+        db.run(`UPDATE route_visits
+       SET validator_name = ?, contact_name = ?, validated_at = datetime('now', 'localtime')
+       WHERE id = ?`, [validatorName, contactName, visitId]);
+        recordRouteAudit(validatorName, String(visit.loja), `Atendimento validado com ${contactName}`, visitId);
+        saveDatabase();
+        res.json(getRouteVisit(visitId));
+    }
+    catch (error) {
+        console.error('Failed to validate route visit:', error);
+        res.status(500).json({ error: 'Não foi possível validar o atendimento' });
+    }
+});
+app.post('/api/route/visits/:id/tickets', (req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const visitId = Number(req.params.id);
+        if (!Number.isSafeInteger(visitId) || visitId <= 0)
+            return res.status(400).json({ error: 'Atendimento inválido' });
+        const visit = getRouteVisit(visitId);
+        if (!visit)
+            return res.status(404).json({ error: 'Atendimento não encontrado' });
+        if (visit.end_time)
+            return res.status(409).json({ error: 'Não é possível adicionar chamados a um atendimento concluído' });
+        const ticketNumber = String(req.body?.ticket_number || '').trim();
+        const description = String(req.body?.description || '').trim();
+        const username = String(req.body?.username || '').trim();
+        if (!ticketNumber || !description || !username) {
+            return res.status(400).json({ error: 'Número do chamado, descrição e responsável são obrigatórios' });
+        }
+        db.run('INSERT INTO route_tickets (visit_id, ticket_number, description) VALUES (?, ?, ?)', [visitId, ticketNumber, description]);
+        const ticketId = Number(queryRows('SELECT last_insert_rowid() AS id')[0].id);
+        recordRouteAudit(username, String(visit.loja), `Chamado ${ticketNumber} adicionado`, visitId);
+        saveDatabase();
+        const ticket = queryRows('SELECT * FROM route_tickets WHERE id = ?', [ticketId])[0];
+        res.status(201).json(ticket);
+    }
+    catch (error) {
+        console.error('Failed to add route ticket:', error);
+        res.status(500).json({ error: 'Não foi possível adicionar o chamado' });
+    }
+});
+app.get('/api/route/dashboard', (_req, res) => {
+    try {
+        if (!db)
+            return res.status(500).json({ error: 'Banco de dados indisponível' });
+        const topStores = queryRows(`SELECT loja, COUNT(*) AS visits FROM route_visits
+       GROUP BY loja ORDER BY visits DESC, CAST(loja AS INTEGER) LIMIT 10`);
+        const averageTime = queryRows(`SELECT loja, ROUND(AVG(duration_minutes), 1) AS average_minutes
+       FROM route_visits WHERE duration_minutes IS NOT NULL
+       GROUP BY loja ORDER BY average_minutes DESC`);
+        const cityRanking = queryRows(`SELECT cidade, COUNT(*) AS visits FROM route_visits
+       GROUP BY cidade ORDER BY visits DESC, cidade`);
+        const ticketTotals = queryRows(`SELECT
+         SUM(CASE WHEN v.visit_date = date('now', 'localtime') THEN 1 ELSE 0 END) AS today,
+         SUM(CASE WHEN v.visit_date >= date('now', 'localtime', 'start of month') THEN 1 ELSE 0 END) AS month,
+         SUM(CASE WHEN v.visit_date >= date('now', 'localtime', 'start of year') THEN 1 ELSE 0 END) AS year
+       FROM route_tickets t JOIN route_visits v ON v.id = t.visit_id`)[0] || { today: 0, month: 0, year: 0 };
+        const dailyVisits = queryRows(`SELECT visit_date, COUNT(*) AS visits, COALESCE(SUM(duration_minutes), 0) AS minutes
+       FROM route_visits
+       WHERE visit_date >= date('now', 'localtime', 'start of month')
+       GROUP BY visit_date ORDER BY visit_date`);
+        const dailyTickets = queryRows(`SELECT v.visit_date, COUNT(*) AS tickets
+       FROM route_tickets t JOIN route_visits v ON v.id = t.visit_id
+       WHERE v.visit_date >= date('now', 'localtime', 'start of month')
+       GROUP BY v.visit_date`);
+        const audits = queryRows(`SELECT created_at, username, loja, action
+       FROM route_audit ORDER BY id DESC LIMIT 50`);
+        const ticketsByDate = new Map(dailyTickets.map((row) => [String(row.visit_date), row.tickets]));
+        const monthly = dailyVisits.map((row) => ({
+            date: row.visit_date,
+            visits: row.visits,
+            tickets: ticketsByDate.get(String(row.visit_date)) || 0,
+            minutes: row.minutes
+        }));
+        res.json({ topStores, averageTime, cityRanking, ticketTotals, monthly, audits });
+    }
+    catch (error) {
+        console.error('Failed to get route dashboard:', error);
+        res.status(500).json({ error: 'Não foi possível carregar o painel de atendimentos' });
+    }
 });
 // Recibir logs batch
 app.post('/api/logs/batch', (req, res) => {

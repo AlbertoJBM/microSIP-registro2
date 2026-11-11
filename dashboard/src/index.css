@@ -54,3 +54,639 @@ code {
     animation-iteration-count: 1 !important;
   }
 }
+
+.route-page {
+  width: 100%;
+  min-width: 0;
+  padding: 28px;
+  color: #e2e8f0;
+}
+
+.route-heading,
+.route-modal-heading,
+.route-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.route-heading {
+  margin-bottom: 24px;
+}
+
+.route-heading h2,
+.route-modal-heading h2 {
+  margin: 3px 0 6px;
+  color: #f8fafc;
+  font-size: 25px;
+}
+
+.route-heading p,
+.route-muted {
+  color: #94a3b8;
+}
+
+.route-eyebrow {
+  color: #38bdf8 !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.route-technician,
+.route-modal-fields label,
+.route-field {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.route-technician input,
+.route-search,
+.route-modal input,
+.route-modal textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: #0c1726;
+  color: #e2e8f0;
+}
+
+.route-technician input {
+  min-width: 230px;
+}
+
+.route-day-selector,
+.route-day-save,
+.route-selected-store,
+.route-validation-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.route-day-selector {
+  margin-bottom: 20px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.route-day-selector input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #0c1726;
+  color: #e2e8f0;
+}
+
+.route-day-save {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin-bottom: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: rgba(15, 27, 44, 0.84);
+}
+
+.route-day-save > div,
+.route-selected-store > span {
+  display: grid;
+  gap: 4px;
+}
+
+.route-day-save strong,
+.route-selected-store strong {
+  color: #f1f5f9;
+  font-size: 13px;
+}
+
+.route-day-save small,
+.route-selected-store small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.route-selected-stores {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  padding-top: 14px;
+}
+
+.route-selected-stores h3 {
+  margin-bottom: 2px;
+}
+
+.route-selected-store {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 8px 0;
+}
+
+.route-selected-store button {
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #1e293b;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.route-selected-store button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.route-search:focus,
+.route-modal input:focus,
+.route-modal textarea:focus,
+.route-technician input:focus {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+.route-error {
+  margin: 12px 0;
+  border: 1px solid #f87171;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(127, 29, 29, 0.34);
+  color: #fecaca;
+}
+
+.route-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.route-picker,
+.route-panel {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  padding: 18px;
+  background: rgba(15, 27, 44, 0.84);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+.route-picker h3,
+.route-panel h3,
+.route-ticket-section h3 {
+  margin: 0 0 14px;
+  color: #f1f5f9;
+  font-size: 16px;
+}
+
+.route-store-list {
+  display: grid;
+  max-height: 480px;
+  margin: 12px 0;
+  overflow: auto;
+}
+
+.route-store-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 9px 2px;
+  cursor: pointer;
+}
+
+.route-store-option input {
+  margin-top: 3px;
+  accent-color: #38bdf8;
+}
+
+.route-store-option span,
+.route-card-content {
+  display: grid;
+  gap: 4px;
+}
+
+.route-store-option strong {
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.route-store-option small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.route-content {
+  min-width: 0;
+}
+
+.route-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.route-summary article {
+  display: grid;
+  align-content: space-between;
+  gap: 12px;
+  min-height: 92px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  padding: 14px;
+  background: linear-gradient(145deg, rgba(20, 42, 66, 0.9), rgba(13, 24, 39, 0.92));
+}
+
+.route-summary article span {
+  color: #9fb0c6;
+  font-size: 12px;
+}
+
+.route-summary article strong {
+  color: #f8fafc;
+  font-size: 22px;
+}
+
+.route-disclaimer {
+  margin: 12px 0 18px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.route-stops {
+  display: grid;
+  gap: 12px;
+}
+
+.route-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  padding: 16px;
+  background: rgba(15, 27, 44, 0.84);
+}
+
+.route-card.is-completed {
+  border-color: rgba(0, 204, 68, 0.48);
+}
+
+.route-card-order {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  font-weight: 700;
+}
+
+.route-card-content > strong {
+  color: #f8fafc;
+  font-size: 16px;
+}
+
+.route-card-content > span {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.route-card-content small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.route-card-content .route-status {
+  font-weight: 700;
+}
+
+.route-visit-button,
+.route-secondary-button,
+.route-ticket-form button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 15px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.route-visit-button {
+  background: #2563eb;
+  color: #fff;
+}
+
+.route-visit-button.is-completed {
+  background: #166534;
+}
+
+.route-validate-button {
+  min-height: 40px;
+  border: 1px solid #eab308;
+  border-radius: 8px;
+  padding: 9px 18px;
+  background: #facc15;
+  color: #422006;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.route-validate-button.is-validated {
+  border-color: #15803d;
+  background: #166534;
+  color: #f0fdf4;
+}
+
+.route-validate-button:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.route-visit-button:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.route-secondary-button {
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.route-empty {
+  border: 1px dashed #475569;
+  border-radius: 10px;
+  padding: 30px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.route-modal-backdrop {
+  position: fixed;
+  z-index: 3000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(2, 6, 12, 0.78);
+}
+
+.route-modal {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 22px;
+  background: #111d2d;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+.route-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.route-modal-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.route-validation-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.route-validation-fields label {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.route-validation-info {
+  margin-top: 18px;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #bbf7d0;
+  font-size: 13px;
+}
+
+.route-add-store-modal > p {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.route-field textarea,
+.route-modal textarea {
+  resize: vertical;
+}
+
+.route-ticket-section {
+  margin-top: 18px;
+  border-top: 1px solid #334155;
+  padding-top: 18px;
+}
+
+.route-section-heading span {
+  color: #7dd3fc;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.route-ticket-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 10px 0;
+}
+
+.route-ticket-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  border-radius: 7px;
+  padding: 10px;
+  background: rgba(30, 41, 59, 0.72);
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.route-ticket-list li strong {
+  color: #f8fafc;
+}
+
+.route-ticket-form {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.65fr) minmax(140px, 1.4fr) auto;
+  gap: 8px;
+}
+
+.route-ticket-form button {
+  background: #2563eb;
+  color: #fff;
+}
+
+.route-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.route-history-summary {
+  margin-bottom: 18px;
+}
+
+.route-history-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.route-ranking-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 10px 0;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.route-ranking-row strong {
+  color: #7dd3fc;
+  text-align: right;
+}
+
+.route-chart {
+  width: 100%;
+  height: 300px;
+}
+
+.route-audit-panel {
+  margin-top: 16px;
+}
+
+.route-audit-table-wrap {
+  overflow-x: auto;
+}
+
+.route-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #cbd5e1;
+  font-size: 13px;
+  text-align: left;
+}
+
+.route-audit-table th,
+.route-audit-table td {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+  padding: 11px 9px;
+  white-space: nowrap;
+}
+
+.route-audit-table th {
+  color: #7dd3fc;
+}
+
+@media (max-width: 900px) {
+  .route-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .route-store-list {
+    max-height: 260px;
+  }
+
+  .route-history-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .route-page {
+    padding: 18px 12px;
+  }
+
+  .route-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .route-technician,
+  .route-technician input {
+    width: 100%;
+  }
+
+  .route-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .route-card {
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .route-card-order {
+    width: 30px;
+    height: 30px;
+  }
+
+  .route-card .route-visit-button,
+  .route-card .route-validate-button {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .route-modal-fields,
+  .route-validation-fields,
+  .route-ticket-form {
+    grid-template-columns: 1fr;
+  }
+
+  .route-day-save {
+    grid-template-columns: 1fr;
+  }
+
+  .route-ticket-list li {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .route-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .route-modal-actions button {
+    width: 100%;
+  }
+}
