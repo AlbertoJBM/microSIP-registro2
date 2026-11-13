@@ -550,8 +550,9 @@ const TableRow = styled.tr`
 
 export const Dashboard: React.FC = () => {
   // Detectar URL del servidor dinámicamente para soportar acceso desde red
-  const SERVER_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
-    ? 'http://localhost:3001'
+  const SERVER_URL = window.location.origin.includes('localhost') || window.location.origin.includes('10.25.96.58')||
+                window.location.origin.includes('suportekoch.adm')
+    ? 'http://10.25.96.58:3001'
     : window.location.origin;
 
   const [data, setData] = useState<DashboardData | null>(null);
@@ -981,7 +982,7 @@ export const Dashboard: React.FC = () => {
             />
           </FilterGroup>
         </SidebarSection>
-
+        {/*
         <SidebarSection>
           <SectionTitle>Filtros por Agente</SectionTitle>
           <FilterGroup>
@@ -1000,7 +1001,7 @@ export const Dashboard: React.FC = () => {
             </FilterSelect>
           </FilterGroup>
         </SidebarSection>
-
+*/}
         <SidebarSection>
           <SectionTitle>Filtros por Localização</SectionTitle>
           <FilterGroup>
