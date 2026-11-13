@@ -2,43 +2,21 @@
   "name": "microsip-call-log-sync",
   "version": "1.0.0",
   "description": "Sistema de sincronizacion de llamadas MicroSIP",
-  "main": "index.js",
   "scripts": {
-    "setup": "node setup.js",
-    "install-all": "npm install && cd server && npm install && cd ../dashboard && npm install",
-    "build-all": "cd server && npm run build && cd ../dashboard && npm run build",
+    "install-all": "npm install && cd dashboard && npm install",
+    "build-all": "npm run build-server && cd dashboard && npm run build",
+    "build-server": "cd server && go build -o serverMicroSIP.exe .",
     "build-agent-exe": "cd agent && go build -ldflags=-s -w -o MicroSIP-Agent.exe .",
     "start": "concurrently -n SERVER,AGENT,DASHBOARD -c blue,green,magenta \"npm run start-server\" \"npm run start-agent\" \"npm run dev-dashboard\"",
-    "start-server": "cd server && npm start",
+    "start-server": "cd server && go run .",
     "start-agent": "cd agent && go run .",
-    "dev-server": "cd server && npm run dev",
+    "dev-server": "cd server && go run .",
     "dev-agent": "cd agent && go run .",
     "dev-dashboard": "cd dashboard && npm run dev",
     "build-dashboard": "cd dashboard && npm run build",
     "test": "npm run build-all"
   },
-  "keywords": [
-    "microsip",
-    "voip",
-    "dashboard"
-  ],
-  "author": "Tu Nombre",
-  "license": "MIT",
   "dependencies": {
-    "axios": "^1.20.0",
-    "chokidar": "^5.0.0",
-    "concurrently": "^9.2.1",
-    "express": "^5.2.1",
-    "socket.io-client": "^4.8.3",
-    "sql.js": "^1.14.2"
-  },
-  "devDependencies": {
-    "@types/axios": "^0.9.36",
-    "@types/chokidar": "^1.7.5",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.4.0",
-    "@types/socket.io-client": "^1.4.36",
-    "@types/sql.js": "^1.4.11",
-    "typescript": "^7.0.2"
+    "concurrently": "^9.2.1"
   }
 }

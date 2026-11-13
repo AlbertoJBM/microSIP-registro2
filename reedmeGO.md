@@ -107,13 +107,14 @@ El agente tiene que correr con la misma cuenta que usa MicroSIP. No lo pongas co
 
 No hace falta abrir un puerto en la PC del colega. Solo tiene que poder salir por la red hacia `10.25.96.58` puerto `3001`. El firewall del server es el que tiene que tener el `3001` abierto.
 
-## 5. Server y dashboard (sin cambios)
+## 5. Servidor y dashboard
 
 En la maquina central, como siempre:
 
 ```powershell
 cd "C:\Users\zerat\OneDrive\Documentos\Projeto Registro call\microSIP-registro2"
-npm --prefix server run start
+powershell -ExecutionPolicy Bypass -File server\build-windows.ps1
+server\startServerMicroSIP.bat
 ```
 
 El dashboard se abre en `http://10.25.96.58:3001`.

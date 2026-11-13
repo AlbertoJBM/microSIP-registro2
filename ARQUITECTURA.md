@@ -28,7 +28,7 @@ Sistema centralizado que recolecta logs de llamadas de múltiples máquinas con 
 │ 10.25.96.58:3001                                        │
 │                                                          │
 │ ┌──────────────────────────────────────────────────┐   │
-│ │ Express + Socket.IO                              │   │
+│ │ Servidor Go + protocolo Socket.IO                │   │
 │ │ - Recibe datos de agentes                        │   │
 │ │ - Guarda en BD central                           │   │
 │ │ - Emite eventos en tiempo real                   │   │
@@ -61,7 +61,7 @@ Sistema centralizado que recolecta logs de llamadas de múltiples máquinas con 
 | Componente | Tecnología | Propósito |
 |-----------|-----------|----------|
 | **Agent** | Go (un .exe) | Lee MicroSIP local, envía al servidor |
-| **Server** | Express + Socket.IO | Centraliza datos, sirve API |
+| **Server** | Go + SQLite + WebSocket | Centraliza datos, sirve API y eventos em tempo real |
 | **Database** | SQLite | Almacena llamadas y agentes |
 | **Dashboard** | React + Vite | UI en tiempo real |
 | **Gráficas** | Recharts | Visualización de datos |
@@ -195,8 +195,11 @@ Atendimentos possuem os estados `ABERTO`, `VALIDAR` e `FINALIZADO`. A conclusão
 ```
 call-log-sync/
 ├── server/
-│   ├── src/index.ts       ← SERVIDOR CENTRAL (API + WebSocket)
-│   └── dist/              ← Compilado
+│   ├── main.go            ← SERVIDOR CENTRAL (API + WebSocket)
+│   ├── routes.go          ← Rota diária e atendimentos
+│   ├── calls.go           ← Sincronização e consultas de chamadas
+│   ├── database.go        ← SQLite e migrações
+│   └── data/              ← Banco central e catálogo de lojas
 │
 ├── agent/
 │   ├── main.go            ← AGENTE (lee MicroSIP local)
@@ -217,8 +220,11 @@ call-log-sync/
 # Compilar todo
 npm run build-all
 
+# Compilar servidor para Windows 11 x64
+powershell -ExecutionPolicy Bypass -File server/build-windows.ps1
+
 # Correr servidor (puerto 3001)
-npm --prefix server run start
+server/startServerMicroSIP.bat
 
 # Correr agente (lee local). En las PCs de los colegas se usa MicroSIP-Agent.exe.
 # Ver reedmeGO.md

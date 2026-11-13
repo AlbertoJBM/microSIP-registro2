@@ -821,7 +821,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Conectar al WebSocket
-    const socket = io(SERVER_URL);
+    const socket = io(SERVER_URL, { transports: ['websocket'] });
 
     // Cargar datos iniciales
     fetchFilterOptions();
