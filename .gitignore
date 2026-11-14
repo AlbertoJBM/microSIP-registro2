@@ -13,3 +13,4 @@ node_modules/
 *.zip
 **/dist/
 **/*.db
+server/data/central_logs.db server/data/central_logs_backup_20260823_165048.db
